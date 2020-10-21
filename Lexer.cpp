@@ -30,11 +30,21 @@ const char* LexerError::what() const noexcept {
   return _msg.data();
 }
 
+namespace {
+  void trim(string& str) {
+    const string spaces = " \t\r";
+    auto beg = std::max<size_t>(0,std::min(str.size(),str.find_first_not_of(spaces)-1));
+    auto end = std::min<size_t>(str.size(), str.find_last_not_of(spaces));
+    str = string{str.data() + beg, str.data() + end};
+  }
+}
+
 Lexer::Lexer(string&& filename) : _filename{move(filename)} {
   ifstream fin(_filename);
   const string spaces = " \t\r";
   const string numbers = "0123456789";
   for (string line; getline(fin, line);) {
+    trim(line);
     _lines.push_back(line);
     string_view sv{_lines.back()};
     for (sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())); 
