@@ -35,11 +35,11 @@ Lexer::Lexer(string&& filename) : _filename{move(filename)} {
   const string spaces = " \t\r";
   const string numbers = "0123456789";
   for (string line; getline(fin, line);) {
-    auto beg = std::min(line.find_first_not_of(spaces), line.size());
-    auto end = std::min(line.find_last_not_of(spaces), line.size());
-    _lines.emplace_back(string{line.begin() + beg, line.begin() + end});
-    for (string_view sv{_lines.back()}; !sv.empty();
-      sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())))
+    _lines.push_back(line);
+    string_view sv{_lines.back()};
+    for (sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())); 
+        !sv.empty();
+         sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())))
     {
       size_t length = 1;
       char c = sv.front();
