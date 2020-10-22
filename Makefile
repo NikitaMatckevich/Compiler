@@ -8,26 +8,25 @@ _LIBS =
 BINS = $(patsubst %,$(BINDIR)/%.o,$(_BINS))
 LIBS = $(patsubst %,$(BINDIR)/%.o,$(_LIBS)) 
 
-
-# Compiler flags
 CXX = g++-9
 CXXFLAGS = -std=c++17 -I $(SRCDIR)
 DBGFLAGS = -DDEBUG -g -Wall -Wextra -pedantic -fsanitize=address
-
 ifndef lvl
   lvl = 3
 endif
 OPTFLAGS = -O$(lvl)
 
-all: $(BINDIR)/compiler.out
+target = $(BINDIR)/compiler.out
+
+all: $(target)
 
 dbg: CXXFLAGS += $(DBGFLAGS)
-dbg: $(BINDIR)/compiler.out
+dbg: $(target)
 
 opt: CXXFLAGS += $(OPTFLAGS)
-opt: $(BINDIR)/compiler.out
+opt: $(target)
 
-$(BINDIR)/compiler.out: $(BINS)
+$(target): $(BINS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 $(BINDIR)/%.o: %.cpp
