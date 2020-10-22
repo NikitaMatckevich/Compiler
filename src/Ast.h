@@ -15,9 +15,9 @@ struct Expression {
   virtual ~Expression() = default;
 };
 
-struct Int : Expression {
+struct Constant : Expression {
   int value;
-  Int(int);
+  Constant(int);
   virtual int exec() const override final;
 };
 

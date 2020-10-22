@@ -3,9 +3,9 @@
 #include "Ast.h"
 using namespace std;
 
-Int::Int(int value)
+Constant::Constant(int value)
   : value(value) {}
-int Int::exec() const {
+int Constant::exec() const {
   return value;
 }
 
@@ -30,7 +30,7 @@ int BinaryExpression::exec() const {
     else if (op.is<Div>())
       value /= terms[++i]->exec();
     else throw
-      SyntaxError("hui");
+      SyntaxError("error");
   }
   return value;
 }
@@ -58,13 +58,13 @@ expr_ptr<UnaryExpression> readUnaryOp(const Lexer& lex, size_t& pos) {
     if (lex.tokens[pos].is<RPar>())
       pos++;
     else
-      throw SyntaxError("hui");
+      throw SyntaxError("error");
     return p;
   }
   else if (t.is<Number>())
-    return make_unique<UnaryExpression>(make_unique<Int>(t.as<Number>().value), is_neg);
+    return make_unique<UnaryExpression>(make_unique<Constant>(t.as<Number>().value), is_neg);
   else
-    throw SyntaxError("hui");
+    throw SyntaxError("error");
 }
 
 expr_ptr<BinaryExpression> readMulDiv(const Lexer& lex, size_t& pos) {
@@ -79,7 +79,7 @@ expr_ptr<BinaryExpression> readMulDiv(const Lexer& lex, size_t& pos) {
   if (t.is<Eol>() || t.is<RPar>() || t.is<Add>() || t.is<Sub>())
     return make_unique<BinaryExpression>(move(ops), move(terms));
   else
-    throw SyntaxError("hui");
+    throw SyntaxError("error");
 }
 
 expr_ptr<BinaryExpression> readAddSub(const Lexer& lex, size_t& pos) {
@@ -94,7 +94,7 @@ expr_ptr<BinaryExpression> readAddSub(const Lexer& lex, size_t& pos) {
   if (t.is<Eol>() || t.is<RPar>())
     return make_unique<BinaryExpression>(move(ops), move(terms));
   else
-    throw SyntaxError("hui");
+    throw SyntaxError("error");
 }
 
 }
