@@ -16,20 +16,16 @@ ifndef lvl
 endif
 OPTFLAGS = -O$(lvl)
 
-target = $(BINDIR)/compiler.out
-
-all: $(target)
+TARGET = $(BINDIR)/compiler
 
 dbg: CXXFLAGS += $(DBGFLAGS)
-dbg: $(target)
-
 opt: CXXFLAGS += $(OPTFLAGS)
-opt: $(target)
+all dbg opt: $(TARGET)
 
-$(target): $(BINS)
+$(TARGET): $(BINS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
-$(BINDIR)/%.o: %.cpp
+$(BINDIR)/%.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 .PHONY: clean
