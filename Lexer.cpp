@@ -1,5 +1,4 @@
 #include <fstream>
-#include <iostream>
 #include <charconv>
 #include "Lexer.h"
 
@@ -36,7 +35,6 @@ namespace {
     auto beg = std::min(str.size(), str.find_first_not_of(spaces));
     auto end = std::min(str.size(), str.find_last_not_of(spaces) + 1);
     str = string{str.begin() + beg, str.begin() + end};
-    std::cout << str << std::endl;
   }
 }
 
