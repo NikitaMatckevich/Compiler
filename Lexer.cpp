@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <charconv>
 #include "Lexer.h"
 
@@ -33,9 +33,10 @@ const char* LexerError::what() const noexcept {
 namespace {
   void trim(string& str) {
     const string spaces = " \t\r";
-    auto beg = std::max<size_t>(0,std::min(str.size(),str.find_first_not_of(spaces)-1));
-    auto end = std::min<size_t>(str.size(), str.find_last_not_of(spaces));
-    str = string{str.data() + beg, str.data() + end};
+    auto beg = std::min(str.size(), str.find_first_not_of(spaces));
+    auto end = std::min(str.size(), str.find_last_not_of(spaces) + 1);
+    str = string{str.begin() + beg, str.begin() + end};
+    std::cout << str << std::endl;
   }
 }
 
@@ -43,12 +44,11 @@ Lexer::Lexer(string&& filename) : _filename{move(filename)} {
   ifstream fin(_filename);
   const string spaces = " \t\r";
   const string numbers = "0123456789";
-  for (string line; getline(fin, line);) {
+  size_t line_nb = 0;
+  for (string line; getline(fin, line); line_nb++) {
     trim(line);
-    _lines.push_back(line);
-    string_view sv{_lines.back()};
-    for (sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())); 
-        !sv.empty();
+    _lines.push_front(line);
+    for (string_view sv{_lines.front()}; !sv.empty();
          sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())))
     {
       size_t length = 1;
@@ -57,41 +57,23 @@ Lexer::Lexer(string&& filename) : _filename{move(filename)} {
         length = std::min(sv.find_first_not_of(numbers), sv.size());
         int value;
         from_chars(sv.data(), sv.data() + length, value);
-        tokens.emplace_back(Token{sv, _lines.size(), Number{value}});
+        tokens.emplace_back(Token{sv, line_nb, Number{value}});
       }
       else {
         switch (c) {
-          case '+' : tokens.emplace_back(Token(sv, _lines.size(), Add {})); break;
-          case '-' : tokens.emplace_back(Token(sv, _lines.size(), Sub {})); break;
-          case '*' : tokens.emplace_back(Token(sv, _lines.size(), Mul {})); break;
-          case '/' : tokens.emplace_back(Token(sv, _lines.size(), Div {})); break;
-          case '(' : tokens.emplace_back(Token(sv, _lines.size(), LPar{})); break;
-          case ')' : tokens.emplace_back(Token(sv, _lines.size(), RPar{})); break;
-          case ';' : tokens.emplace_back(Token(sv, _lines.size(), Eol {})); break;
+          case '+' : tokens.emplace_back(Token(sv, line_nb, Add {})); break;
+          case '-' : tokens.emplace_back(Token(sv, line_nb, Sub {})); break;
+          case '*' : tokens.emplace_back(Token(sv, line_nb, Mul {})); break;
+          case '/' : tokens.emplace_back(Token(sv, line_nb, Div {})); break;
+          case '(' : tokens.emplace_back(Token(sv, line_nb, LPar{})); break;
+          case ')' : tokens.emplace_back(Token(sv, line_nb, RPar{})); break;
+          case ';' : tokens.emplace_back(Token(sv, line_nb, Eol {})); break;
           default  : throw
-            LexerError("unexpected symbol", c, _lines.size(), sv, _filename);
+            LexerError("unexpected symbol", c, line_nb, sv, _filename);
         }
       }
       sv.remove_prefix(length);
     }
   }
-  tokens.emplace_back(Token{string_view{}, _lines.size(), Eof{}});
-}
-
-int main () {
-try {
-  Lexer L("program.txt");
-  for (auto token : L.tokens) {
-    cout << "line " << token.line_number << " " << token.context;
-    if (token.is<Number>())
-      cout << " {" << token.as<Number>().value << "}";
-    cout << endl;
-  }
-  for (size_t i = 0; i < L.num_lines(); ++i)
-    cout << L.line(i) << endl;
-  return 0;
-}
-catch (const exception& e) {
-  cerr << e.what() << endl;
-}
+  tokens.emplace_back(Token{string_view{}, line_nb, Eof{}});
 }

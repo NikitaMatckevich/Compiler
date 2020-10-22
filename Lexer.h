@@ -1,6 +1,8 @@
 #pragma once
-#include <vector>
 #include <string>
+#include <vector>
+#include <forward_list>
+#include <stdexcept>
 #include "Token.h"
 
 struct LexerError : std::runtime_error {
@@ -8,7 +10,6 @@ struct LexerError : std::runtime_error {
   virtual const char* what() const noexcept final override;
 private:
   std::string _msg;
-
   const char _c;
   const size_t _line_number;
   std::string_view _line;
@@ -18,10 +19,8 @@ private:
 struct Lexer {
   std::vector<Token> tokens;
   explicit Lexer(std::string&& filename);
-  inline size_t num_lines() const noexcept { return _lines.size(); }
-  inline std::string_view line(size_t i) const { return _lines[i]; }
   inline std::string_view filename() const { return _filename; }
 private:
   std::string _filename;
-  std::vector<std::string> _lines;
+  std::forward_list<std::string> _lines;
 };
