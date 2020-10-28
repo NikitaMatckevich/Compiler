@@ -1,33 +1,8 @@
 #include <fstream>
 #include <charconv>
-#include "Lexer.h"
+#include <Lexer.h>
 
 using namespace std;
-
-LexerError::LexerError(const char* msg,
-                       const char c,
-                       size_t line_number,
-                       string_view line,
-                       string_view filename)
-: runtime_error(msg)
-, _msg("Lexer error:")
-, _c(c)
-, _line_number(line_number)
-, _line(line)
-, _filename(filename) {
-  _msg += "\ncharacter ";
-  _msg += _c;
-  _msg += "\nat line ";
-  _msg += to_string(_line_number);
-  _msg += ":\n";
-  _msg += _line;
-  _msg += "\nin file ";
-  _msg += _filename;
-}
-
-const char* LexerError::what() const noexcept {
-  return _msg.data();
-}
 
 namespace {
   void trim(string& str) {
@@ -38,40 +13,55 @@ namespace {
   }
 }
 
-Lexer::Lexer(string&& filename) : _filename{move(filename)} {
-  ifstream fin(_filename);
-  const string spaces = " \t\r";
-  const string numbers = "0123456789";
-  size_t line_nb = 0;
-  for (string line; getline(fin, line); line_nb++) {
-    trim(line);
+lexer::lexer(string&& file)
+: _file{move(file)}, _fin{}, _lines{}, _sv{}, _line_nb{0}, _curr{} {
+	if (_fin.open(_file); !_fin.is_open()) {
+		cout << "cannot open file \n";
+		throw lexer_error(_file, _sv, _line_nb);
+	}
+  next_token();
+}
+
+lexer::~lexer() {
+	_fin.close();
+}
+
+void lexer::next_token() {
+  if (_curr.is<types::eof>())
+    return;
+  if (_sv.empty()) {
+    string line;
+    for (; line.size() == 0; trim(line)) {
+			_line_nb++;
+			if (!getline(_fin, line)) {
+      	_curr = token{_file, _sv, _line_nb, types::eof{}};
+      	return;
+			}
+    }
     _lines.push_front(line);
-    for (string_view sv{_lines.front()}; !sv.empty();
-         sv.remove_prefix(std::min(sv.find_first_not_of(spaces), sv.size())))
-    {
-      size_t length = 1;
-      char c = sv.front();
-      if (numbers.find(c) != string::npos) {
-        length = std::min(sv.find_first_not_of(numbers), sv.size());
-        int value;
-        from_chars(sv.data(), sv.data() + length, value);
-        tokens.emplace_back(Token{sv, line_nb, Number{value}});
-      }
-      else {
-        switch (c) {
-          case '+' : tokens.emplace_back(Token(sv, line_nb, Add {})); break;
-          case '-' : tokens.emplace_back(Token(sv, line_nb, Sub {})); break;
-          case '*' : tokens.emplace_back(Token(sv, line_nb, Mul {})); break;
-          case '/' : tokens.emplace_back(Token(sv, line_nb, Div {})); break;
-          case '(' : tokens.emplace_back(Token(sv, line_nb, LPar{})); break;
-          case ')' : tokens.emplace_back(Token(sv, line_nb, RPar{})); break;
-          case ';' : tokens.emplace_back(Token(sv, line_nb, Eol {})); break;
-          default  : throw
-            LexerError("unexpected symbol", c, line_nb, sv, _filename);
-        }
-      }
-      sv.remove_prefix(length);
+    _sv = string_view{_lines.front()};
+  }
+  size_t length = 1;
+  char c = _sv.front();
+  if (numbers.find(c) != string::npos) {
+    length = std::min(_sv.find_first_not_of(numbers), _sv.size());
+    int value;
+    from_chars(_sv.data(), _sv.data() + length, value);
+    _curr = token(_file, _sv, _line_nb, types::number{value});
+  }
+  else {
+    switch (c) {
+      case '+' : _curr = token(_file, _sv, _line_nb, types::add  {}); break;
+      case '-' : _curr = token(_file, _sv, _line_nb, types::sub  {}); break;
+      case '*' : _curr = token(_file, _sv, _line_nb, types::mul  {}); break;
+      case '/' : _curr = token(_file, _sv, _line_nb, types::div  {}); break;
+      case '(' : _curr = token(_file, _sv, _line_nb, types::l_par{}); break;
+      case ')' : _curr = token(_file, _sv, _line_nb, types::r_par{}); break;
+      case ';' : _curr = token(_file, _sv, _line_nb, types::eol  {}); break;
+      default  : throw
+        lexer_error(_file, _sv, _line_nb);
     }
   }
-  tokens.emplace_back(Token{string_view{}, line_nb, Eof{}});
+  _sv.remove_prefix(length);
+  _sv.remove_prefix(std::min(_sv.find_first_not_of(spaces), _sv.size()));
 }
