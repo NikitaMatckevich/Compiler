@@ -2,4 +2,5 @@
 cmake-build-*/**
 .idea/**
 build/**
+bin/**
 compile_commands.json
