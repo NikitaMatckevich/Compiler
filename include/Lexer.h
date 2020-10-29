@@ -8,15 +8,18 @@
 #include <vector>
 
 class Lexer {
-  const std::string spaces_  = " \t\r";
-  const std::string numbers_ = "0123456789";
-  void NextToken();
   std::string file_;
   std::ifstream fin_;
   std::forward_list<std::string> lines_;
   std::string_view sv_;
   size_t line_nb_;
   Token curr_;
+
+  static void Trim(std::string& s);
+
+  bool ReachedEOF() const noexcept;
+  bool SkipEmptyLines();
+  void NextToken();
 
  public:
   explicit Lexer(std::string&& file);

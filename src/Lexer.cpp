@@ -1,17 +1,8 @@
 #include <Lexer.h>
 #include <charconv>
 #include <fstream>
-
-namespace {
-
-void Trim(std::string& str) {
-  const std::string spaces = " \t\r";
-  auto beg = std::min(str.size(), str.find_first_not_of(spaces));
-  auto end = std::min(str.size(), str.find_last_not_of(spaces) + 1);
-  str      = std::string{str.begin() + beg, str.begin() + end};
-}
-
-} // namespace
+#include <algorithm>
+//#include <iostream>
 
 Lexer::Lexer(std::string&& file)
     : file_{move(file)}
@@ -29,29 +20,48 @@ Lexer::Lexer(std::string&& file)
 
 Lexer::~Lexer() { fin_.close(); }
 
-void Lexer::NextToken() {
-  if (curr_.Is<types::Eof>()) {
-    return;
-  }
+void Lexer::Trim(std::string& s) {
+  auto finder = [](auto first, auto last) {
+    return std::find_if(first, last, [](unsigned char c) {
+      return !std::isspace(c);
+    });
+  };
+  s.erase(s.begin(), finder(s.begin(), s.end()));
+  s.erase(finder(s.rbegin(), s.rend()).base(), s.end());
+}
 
+bool Lexer::ReachedEOF() const noexcept {
+  return curr_.Is<types::Eof>();
+}
+
+bool Lexer::SkipEmptyLines() {
   if (sv_.empty()) {
     std::string line;
     for (; line.empty(); Trim(line)) {
       line_nb_++;
       if (!getline(fin_, line)) {
         curr_ = Token{file_, sv_, line_nb_, types::Eof{}};
-        return;
+        return false;
       }
     }
     lines_.push_front(line);
     sv_ = std::string_view{lines_.front()};
   }
+  return true;
+}
+
+void Lexer::NextToken() {
+  if (ReachedEOF() || !SkipEmptyLines())
+    return;
   size_t length = 1;
-  char c        = sv_.front();
-  if (numbers_.find(c) != std::string::npos) {
-    length = std::min(sv_.find_first_not_of(numbers_), sv_.size());
+  unsigned char c = sv_.front();
+  if (std::isdigit(c)) {
+    auto naN = std::find_if(sv_.begin(), sv_.end(), [](unsigned char c) {
+      return !std::isdigit(c);
+    });
     int value;
-    std::from_chars(sv_.data(), sv_.data() + length, value);
+    std::from_chars(sv_.data(), naN, value);
+    length = static_cast<size_t>(naN - sv_.begin());
     curr_ = Token(file_, sv_, line_nb_, types::Number{value});
   } else {
     switch (c) {
@@ -81,5 +91,8 @@ void Lexer::NextToken() {
     }
   }
   sv_.remove_prefix(length);
-  sv_.remove_prefix(std::min(sv_.find_first_not_of(spaces_), sv_.size()));
+  sv_.remove_prefix(static_cast<size_t>(
+    std::find_if(sv_.begin(), sv_.end(), [](unsigned char c) {
+      return !std::isspace(c);
+    }) - sv_.begin()));
 }
