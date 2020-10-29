@@ -1,23 +1,22 @@
+#include <Ast.h>
 #include <iostream>
 #include <vector>
-#include <Ast.h>
 
 Constant::Constant(int value)
-  : value_(value) {}
+    : value_(value) {}
 
-int Constant::Exec() const {
-  return value_;
-}
+int Constant::Exec() const { return value_; }
 
 UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg)
-  : term_{move(term)}, is_neg_(is_neg) {}
+    : term_{move(term)}
+    , is_neg_(is_neg) {}
 
-int UnaryExpr::Exec() const {
-  return is_neg_ ? -term_->Exec() : term_->Exec();
-}
+int UnaryExpr::Exec() const { return is_neg_ ? -term_->Exec() : term_->Exec(); }
 
-BinaryExpr::BinaryExpr(std::vector<Token>&& ops, std::vector<std::unique_ptr<Expr>>&& terms)
-  : ops_{std::move(ops)}, terms_{std::move(terms)} {}
+BinaryExpr::BinaryExpr(std::vector<Token>&& ops,
+                       std::vector<std::unique_ptr<Expr>>&& terms)
+    : ops_{std::move(ops)}
+    , terms_{std::move(terms)} {}
 
 int BinaryExpr::Exec() const {
   int value = terms_.front()->Exec();
@@ -31,15 +30,15 @@ int BinaryExpr::Exec() const {
       value *= terms_[++i]->Exec();
     } else if (op.Is<types::Div>()) {
       value /= terms_[++i]->Exec();
-    } else { throw
-      SyntaxError(op);
-}
+    } else {
+      throw SyntaxError(op);
+    }
   }
   return value;
 }
 
 Program::Program(std::vector<std::unique_ptr<Expr>>&& instructions)
-  : instructions_{move(instructions)} {}
+    : instructions_{move(instructions)} {}
 
 int Program::Exec() const {
   for (size_t i = 0; i < instructions_.size(); ++i) {
@@ -49,23 +48,25 @@ int Program::Exec() const {
   return 0;
 }
 
-Parser::Parser(Lexer& lex) : lex_(lex) {}
- 
+Parser::Parser(Lexer& lex)
+    : lex_(lex) {}
+
 std::unique_ptr<UnaryExpr> Parser::ReadUnaryOp() {
-  Token t = lex_.Get();
+  Token t     = lex_.Get();
   bool is_neg = false;
-  for (; t.Is<types::Sub>(); t = lex_.Get()) { is_neg = !is_neg;
-}
+  for (; t.Is<types::Sub>(); t = lex_.Get()) {
+    is_neg = !is_neg;
+  }
   if (t.Is<types::LPar>()) {
     auto p = std::make_unique<UnaryExpr>(ReadAddSub(), is_neg);
     Expect<types::RPar>(lex_.Get());
     return p;
-  }
-  else {
+  } else {
     return std::make_unique<UnaryExpr>(
-      std::make_unique<Constant>(Expect<types::Number>(t).As<types::Number>().value),
-      is_neg);
-}
+        std::make_unique<Constant>(
+            Expect<types::Number>(t).As<types::Number>().value),
+        is_neg);
+  }
 }
 
 std::unique_ptr<BinaryExpr> Parser::ReadMulDiv() {
@@ -98,6 +99,6 @@ std::unique_ptr<Program> Parser::ReadProgram() {
   std::vector<std::unique_ptr<Expr>> instructions;
   for (; !lex_.Peek().Is<types::Eof>(); lex_.Get()) {
     instructions.emplace_back(ReadAddSub());
-}
+  }
   return std::make_unique<Program>(std::move(instructions));
 }
