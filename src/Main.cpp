@@ -1,17 +1,16 @@
-#include <iostream>
-#include <Lexer.h>
 #include <Ast.h>
-using namespace std;
+#include <Lexer.h>
+#include <iostream>
 
 int main() {
-try {
-  lexer L("example.txt");
-  parser P(L);
-	auto code = P.read_program()->exec();
-  cout << "Program returned code " << code << endl;
-  return 0;
-}
-catch (const compile_error& e) {
-  cout << e.what() << endl;
-}
+  try {
+    Lexer l("example.txt");
+    Parser p(l);
+    auto code = p.ReadProgram()->Exec();
+    std::cout << "Program returned code " << code << std::endl;
+    return 0;
+  } catch (const CompileError& e) {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

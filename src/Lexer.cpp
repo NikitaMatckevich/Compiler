@@ -1,67 +1,85 @@
-#include <fstream>
-#include <charconv>
 #include <Lexer.h>
-
-using namespace std;
+#include <charconv>
+#include <fstream>
 
 namespace {
-  void trim(string& str) {
-    const string spaces = " \t\r";
-    auto beg = std::min(str.size(), str.find_first_not_of(spaces));
-    auto end = std::min(str.size(), str.find_last_not_of(spaces) + 1);
-    str = string{str.begin() + beg, str.begin() + end};
+
+void Trim(std::string& str) {
+  const std::string spaces = " \t\r";
+  auto beg = std::min(str.size(), str.find_first_not_of(spaces));
+  auto end = std::min(str.size(), str.find_last_not_of(spaces) + 1);
+  str      = std::string{str.begin() + beg, str.begin() + end};
+}
+
+} // namespace
+
+Lexer::Lexer(std::string&& file)
+    : file_{move(file)}
+    , fin_{}
+    , lines_{}
+    , sv_{}
+    , line_nb_{0}
+    , curr_{} {
+  if (fin_.open(file_); !fin_.is_open()) {
+    std::cout << "cannot open file \n";
+    throw LexerError(file_, sv_, line_nb_);
   }
+  NextToken();
 }
 
-lexer::lexer(string&& file)
-: _file{move(file)}, _fin{}, _lines{}, _sv{}, _line_nb{0}, _curr{} {
-	if (_fin.open(_file); !_fin.is_open()) {
-		cout << "cannot open file \n";
-		throw lexer_error(_file, _sv, _line_nb);
-	}
-  next_token();
-}
+Lexer::~Lexer() { fin_.close(); }
 
-lexer::~lexer() {
-	_fin.close();
-}
-
-void lexer::next_token() {
-  if (_curr.is<types::eof>())
+void Lexer::NextToken() {
+  if (curr_.Is<types::Eof>()) {
     return;
-  if (_sv.empty()) {
-    string line;
-    for (; line.size() == 0; trim(line)) {
-			_line_nb++;
-			if (!getline(_fin, line)) {
-      	_curr = token{_file, _sv, _line_nb, types::eof{}};
-      	return;
-			}
+  }
+
+  if (sv_.empty()) {
+    std::string line;
+    for (; line.empty(); Trim(line)) {
+      line_nb_++;
+      if (!getline(fin_, line)) {
+        curr_ = Token{file_, sv_, line_nb_, types::Eof{}};
+        return;
+      }
     }
-    _lines.push_front(line);
-    _sv = string_view{_lines.front()};
+    lines_.push_front(line);
+    sv_ = std::string_view{lines_.front()};
   }
   size_t length = 1;
-  char c = _sv.front();
-  if (numbers.find(c) != string::npos) {
-    length = std::min(_sv.find_first_not_of(numbers), _sv.size());
+  char c        = sv_.front();
+  if (numbers_.find(c) != std::string::npos) {
+    length = std::min(sv_.find_first_not_of(numbers_), sv_.size());
     int value;
-    from_chars(_sv.data(), _sv.data() + length, value);
-    _curr = token(_file, _sv, _line_nb, types::number{value});
-  }
-  else {
+    std::from_chars(sv_.data(), sv_.data() + length, value);
+    curr_ = Token(file_, sv_, line_nb_, types::Number{value});
+  } else {
     switch (c) {
-      case '+' : _curr = token(_file, _sv, _line_nb, types::add  {}); break;
-      case '-' : _curr = token(_file, _sv, _line_nb, types::sub  {}); break;
-      case '*' : _curr = token(_file, _sv, _line_nb, types::mul  {}); break;
-      case '/' : _curr = token(_file, _sv, _line_nb, types::div  {}); break;
-      case '(' : _curr = token(_file, _sv, _line_nb, types::l_par{}); break;
-      case ')' : _curr = token(_file, _sv, _line_nb, types::r_par{}); break;
-      case ';' : _curr = token(_file, _sv, _line_nb, types::eol  {}); break;
-      default  : throw
-        lexer_error(_file, _sv, _line_nb);
+    case '+':
+      curr_ = Token(file_, sv_, line_nb_, types::Add{});
+      break;
+    case '-':
+      curr_ = Token(file_, sv_, line_nb_, types::Sub{});
+      break;
+    case '*':
+      curr_ = Token(file_, sv_, line_nb_, types::Mul{});
+      break;
+    case '/':
+      curr_ = Token(file_, sv_, line_nb_, types::Div{});
+      break;
+    case '(':
+      curr_ = Token(file_, sv_, line_nb_, types::LPar{});
+      break;
+    case ')':
+      curr_ = Token(file_, sv_, line_nb_, types::RPar{});
+      break;
+    case ';':
+      curr_ = Token(file_, sv_, line_nb_, types::Eol{});
+      break;
+    default:
+      throw LexerError(file_, sv_, line_nb_);
     }
   }
-  _sv.remove_prefix(length);
-  _sv.remove_prefix(std::min(_sv.find_first_not_of(spaces), _sv.size()));
+  sv_.remove_prefix(length);
+  sv_.remove_prefix(std::min(sv_.find_first_not_of(spaces_), sv_.size()));
 }

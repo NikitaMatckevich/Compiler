@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+
+Language: Cpp
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+AccessModifierOffset: -1
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true
+
+AlwaysBreakTemplateDeclarations: Yes
+
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma

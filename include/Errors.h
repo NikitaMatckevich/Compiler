@@ -1,22 +1,23 @@
 #pragma once
-#include <stdexcept>
 #include <Token.h>
+#include <stdexcept>
 
-class compile_error : public std::runtime_error {
-protected:
-  std::string _msg;
-  size_t _count;
-  compile_error(std::string_view, std::string_view, size_t);
-public:
-  virtual const char* what() const noexcept final override;
+class CompileError : public std::runtime_error {
+ protected:
+  std::string msg_;
+  size_t count_;
+  CompileError(std::string_view, std::string_view, size_t);
+
+ public:
+  virtual const char* what() const noexcept final override; // NOLINT
 };
 
-class lexer_error : public compile_error {
-public:
-  lexer_error(std::string_view, std::string_view, size_t);
+class LexerError : public CompileError {
+ public:
+  LexerError(std::string_view, std::string_view, size_t);
 };
 
-class syntax_error : public compile_error {
-public:
-  syntax_error(const token&);
+class SyntaxError : public CompileError {
+ public:
+  SyntaxError(const Token&);
 };

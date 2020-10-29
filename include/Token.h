@@ -4,49 +4,51 @@
 #include <variant>
 
 namespace types {
-  struct number {
-    int value; 
-  };
-  struct add  {};
-  struct sub  {};
-  struct mul  {};
-  struct div  {};
-  struct l_par{};
-  struct r_par{};
-  struct eol  {};
-  struct eof  {};
-}
+struct Number {
+  int value;
+};
+struct Add {};
+struct Sub {};
+struct Mul {};
+struct Div {};
+struct LPar {};
+struct RPar {};
+struct Eol {};
+struct Eof {};
+} // namespace types
 
-struct token_info {
+struct TokenInfo {
   std::string_view file;
   std::string_view context;
   size_t line_number;
 };
 
-class token {
-  std::variant<types::number,
-               types::add,
-               types::sub,
-               types::mul,
-               types::div,
-               types::l_par,
-               types::r_par,
-               types::eol,
-               types::eof>
-              _var;
+class Token {
+  std::variant<types::Number, types::Add, types::Sub, types::Mul, types::Div,
+               types::LPar, types::RPar, types::Eol, types::Eof>
+      var_;
 
-public:
-  token_info info; 
+ public:
+  TokenInfo info;
 
-  token() noexcept = default;
-  template <class T> constexpr token(std::string_view file, 
-                                     std::string_view context,
-                                     size_t line_number,
-                                     T&& t) noexcept
-  : _var{std::move(t)}, info{file, context, line_number} {}
+  Token() noexcept = default;
+  template <class T>
+  constexpr Token(std::string_view file, std::string_view context,
+                  size_t line_number, T&& t) noexcept
+      : var_{std::move(t)}
+      , info{file, context, line_number} {}
 
-  template <class T> constexpr T& as() { return std::get<T>(_var); }
-	template <class T> constexpr const T& as() const { return std::get<T>(_var); }
-  template <class T> constexpr bool is() const noexcept { return std::holds_alternative<T>(_var); }
-  constexpr inline std::size_t      id() const noexcept { return _var.index(); }
+  template <class T>
+  constexpr T& As() {
+    return std::get<T>(var_);
+  }
+  template <class T>
+  constexpr const T& As() const {
+    return std::get<T>(var_);
+  }
+  template <class T>
+  constexpr bool Is() const noexcept {
+    return std::holds_alternative<T>(var_);
+  }
+  constexpr inline std::size_t Id() const noexcept { return var_.index(); }
 };
