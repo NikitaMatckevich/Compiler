@@ -1,6 +1,6 @@
 DPSDIR = ./include
 SRCDIR = ./src
-BINDIR = ./bin
+BINDIR = ./build
 
 _DEPS = Errors Token Lexer Ast
 _BINS = Errors Lexer Ast Main
