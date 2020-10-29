@@ -1,35 +1,35 @@
 #include <Errors.h>
 #include <string>
 
-compile_error::compile_error(std::string_view file,
+CompileError::CompileError(std::string_view file,
                              std::string_view line,
                              size_t line_number)
-: std::runtime_error::runtime_error{""}, _msg{file.data()}
+: std::runtime_error::runtime_error{""}, msg_{file.data()}
 {
-  _msg += ":";
-  _msg += std::to_string(line_number);
-  _msg += ":\n\t";
-  _msg += line;
-  _msg += "\n\t";
-  std::string delimeter = " \t\n\r";
-  _count = line.find_first_of(delimeter);
-  _msg += std::string(_count, '^');
+  msg_ += ":";
+  msg_ += std::to_string(line_number);
+  msg_ += ":\n\t";
+  msg_ += line;
+  msg_ += "\n\t";
+  std::string delimiter = " \t\n\r";
+  count_ = line.find_first_of(delimiter);
+  msg_ += std::string(count_, '^');
 }
 
-const char* compile_error::what() const noexcept { return _msg.data(); }
+const char* CompileError::what() const noexcept { return msg_.data(); }
 
-lexer_error::lexer_error(std::string_view file,
+LexerError::LexerError(std::string_view file,
                          std::string_view line,
                          size_t line_number)
-: compile_error(file, line, line_number)
+: CompileError(file, line, line_number)
 {
-  _msg += "\nlexer error: unrecognized character ";
-  _msg += line.front();
+  msg_ += "\nlexer error: unrecognized character ";
+  msg_ += line.front();
 }
 
-syntax_error::syntax_error(const token& t)
-: compile_error(t.info.file, t.info.context, t.info.line_number)
+SyntaxError::SyntaxError(const Token& t)
+: CompileError(t.info.file, t.info.context, t.info.line_number)
 {
-  _msg += "\nsyntax error: unexpected token ";
-  _msg += t.info.context.substr(0, _count);
+  msg_ += "\nsyntax error: unexpected token ";
+  msg_ += t.info.context.substr(0, count_);
 }

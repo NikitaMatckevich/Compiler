@@ -2,21 +2,21 @@
 #include <stdexcept>
 #include <Token.h>
 
-class compile_error : public std::runtime_error {
+class CompileError : public std::runtime_error {
 protected:
-  std::string _msg;
-  size_t _count;
-  compile_error(std::string_view, std::string_view, size_t);
+  std::string msg_;
+  size_t count_;
+  CompileError(std::string_view, std::string_view, size_t);
 public:
-  virtual const char* what() const noexcept final override;
+  virtual const char* what() const noexcept final override; // NOLINT
 };
 
-class lexer_error : public compile_error {
+class LexerError : public CompileError {
 public:
-  lexer_error(std::string_view, std::string_view, size_t);
+  LexerError(std::string_view, std::string_view, size_t);
 };
 
-class syntax_error : public compile_error {
+class SyntaxError : public CompileError {
 public:
-  syntax_error(const token&);
+  SyntaxError(const Token&);
 };

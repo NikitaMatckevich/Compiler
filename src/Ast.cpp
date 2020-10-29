@@ -1,96 +1,103 @@
 #include <iostream>
 #include <vector>
 #include <Ast.h>
-using namespace std;
 
-constant::constant(int value)
-  : value(value) {}
-int constant::exec() const {
-  return value;
+Constant::Constant(int value)
+  : value_(value) {}
+
+int Constant::Exec() const {
+  return value_;
 }
 
-unary_expr::unary_expr(unique_ptr<expr>&& term, bool is_neg)
-  : term{move(term)}, is_neg(is_neg) {}
-int unary_expr::exec() const {
-  return is_neg ? -term->exec() : term->exec();
+UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg)
+  : term_{move(term)}, is_neg_(is_neg) {}
+
+int UnaryExpr::Exec() const {
+  return is_neg_ ? -term_->Exec() : term_->Exec();
 }
 
-binary_expr::binary_expr(vector<token>&& ops, vector<unique_ptr<expr>>&& terms)
-  : ops{move(ops)}, terms{move(terms)} {}
-int binary_expr::exec() const {
-  int value = terms.front()->exec();
-  for (size_t i = 0; i < ops.size();) {
-    token op = ops[i];
-    if (op.is<types::add>())
-      value += terms[++i]->exec();
-    else if (op.is<types::sub>())
-      value -= terms[++i]->exec();
-    else if (op.is<types::mul>())
-      value *= terms[++i]->exec();
-    else if (op.is<types::div>())
-      value /= terms[++i]->exec();
-    else throw
-      syntax_error(op);
+BinaryExpr::BinaryExpr(std::vector<Token>&& ops, std::vector<std::unique_ptr<Expr>>&& terms)
+  : ops_{std::move(ops)}, terms_{std::move(terms)} {}
+
+int BinaryExpr::Exec() const {
+  int value = terms_.front()->Exec();
+  for (size_t i = 0; i < ops_.size();) {
+    Token op = ops_[i];
+    if (op.Is<types::Add>()) {
+      value += terms_[++i]->Exec();
+    } else if (op.Is<types::Sub>()) {
+      value -= terms_[++i]->Exec();
+    } else if (op.Is<types::Mul>()) {
+      value *= terms_[++i]->Exec();
+    } else if (op.Is<types::Div>()) {
+      value /= terms_[++i]->Exec();
+    } else { throw
+      SyntaxError(op);
+}
   }
   return value;
 }
 
-program::program(vector<unique_ptr<expr>>&& instructions)
-  : instructions{move(instructions)} {}
-int program::exec() const {
-  for (size_t i = 0; i < instructions.size(); ++i) {
-    cout << "result of instruction " << i << " is ";
-    cout << instructions[i]->exec() << endl;
+Program::Program(std::vector<std::unique_ptr<Expr>>&& instructions)
+  : instructions_{move(instructions)} {}
+
+int Program::Exec() const {
+  for (size_t i = 0; i < instructions_.size(); ++i) {
+    std::cout << "result of instruction " << i << " is ";
+    std::cout << instructions_[i]->Exec() << std::endl;
   }
   return 0;
 }
 
-parser::parser(lexer& lex) : _lex(lex) {}
+Parser::Parser(Lexer& lex) : lex_(lex) {}
  
-unique_ptr<unary_expr> parser::read_unary_op() {
-  token t = _lex.get();
+std::unique_ptr<UnaryExpr> Parser::ReadUnaryOp() {
+  Token t = lex_.Get();
   bool is_neg = false;
-  for (; t.is<types::sub>(); t = _lex.get()) is_neg = !is_neg;
-  if (t.is<types::l_par>()) {
-    auto p = make_unique<unary_expr>(read_add_sub(), is_neg);
-    expect<types::r_par>(_lex.get());
+  for (; t.Is<types::Sub>(); t = lex_.Get()) { is_neg = !is_neg;
+}
+  if (t.Is<types::LPar>()) {
+    auto p = std::make_unique<UnaryExpr>(ReadAddSub(), is_neg);
+    Expect<types::RPar>(lex_.Get());
     return p;
   }
-  else
-    return make_unique<unary_expr>(
-      make_unique<constant>(expect<types::number>(t).as<types::number>().value),
+  else {
+    return std::make_unique<UnaryExpr>(
+      std::make_unique<Constant>(Expect<types::Number>(t).As<types::Number>().value),
       is_neg);
 }
-
-unique_ptr<binary_expr> parser::read_mul_div() {
-  vector<token> ops;
-  vector<unique_ptr<expr>> terms;
-  terms.emplace_back(read_unary_op());
-  token t = _lex.peek(); 
-  for (; t.is<types::mul>() || t.is<types::div>(); t = _lex.peek()) {
-    ops.push_back(_lex.get());
-    terms.emplace_back(read_unary_op());
-  }
-  expect<types::eol, types::r_par, types::add, types::sub>(t);
-  return make_unique<binary_expr>(move(ops), move(terms));
 }
 
-unique_ptr<binary_expr> parser::read_add_sub() {
-  vector<token> ops;
-  vector<unique_ptr<expr>> terms;
-  terms.emplace_back(read_mul_div());
-  token t = _lex.peek();
-  for (; t.is<types::add>() || t.is<types::sub>(); t = _lex.peek()) {
-    ops.push_back(_lex.get());
-    terms.emplace_back(read_mul_div());
+std::unique_ptr<BinaryExpr> Parser::ReadMulDiv() {
+  std::vector<Token> ops;
+  std::vector<std::unique_ptr<Expr>> terms;
+  terms.emplace_back(ReadUnaryOp());
+  Token t = lex_.Peek();
+  for (; t.Is<types::Mul>() || t.Is<types::Div>(); t = lex_.Peek()) {
+    ops.push_back(lex_.Get());
+    terms.emplace_back(ReadUnaryOp());
   }
-  expect<types::eol, types::r_par>(t);
-  return make_unique<binary_expr>(move(ops), move(terms));
+  Expect<types::Eol, types::RPar, types::Add, types::Sub>(t);
+  return std::make_unique<BinaryExpr>(std::move(ops), std::move(terms));
 }
 
-unique_ptr<program> parser::read_program() {
-  vector<unique_ptr<expr>> instructions;
-  for (; !_lex.peek().is<types::eof>(); _lex.get())
-    instructions.emplace_back(read_add_sub());
-  return make_unique<program>(move(instructions));
+std::unique_ptr<BinaryExpr> Parser::ReadAddSub() {
+  std::vector<Token> ops;
+  std::vector<std::unique_ptr<Expr>> terms;
+  terms.emplace_back(ReadMulDiv());
+  Token t = lex_.Peek();
+  for (; t.Is<types::Add>() || t.Is<types::Sub>(); t = lex_.Peek()) {
+    ops.push_back(lex_.Get());
+    terms.emplace_back(ReadMulDiv());
+  }
+  Expect<types::Eol, types::RPar>(t);
+  return std::make_unique<BinaryExpr>(std::move(ops), std::move(terms));
+}
+
+std::unique_ptr<Program> Parser::ReadProgram() {
+  std::vector<std::unique_ptr<Expr>> instructions;
+  for (; !lex_.Peek().Is<types::Eof>(); lex_.Get()) {
+    instructions.emplace_back(ReadAddSub());
+}
+  return std::make_unique<Program>(std::move(instructions));
 }

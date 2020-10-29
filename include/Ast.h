@@ -3,55 +3,56 @@
 #include <memory>
 #include <stdexcept>
 
-class expr {
+class Expr {
 public:
-  virtual int exec() const = 0;
-  virtual ~expr() = default;
+  virtual int Exec() const = 0;
+  virtual ~Expr() = default;
 };
 
-class constant : public expr {
-  int value;
+class Constant : public Expr {
+  int value_;
 public:
-  constant(int);
-  virtual int exec() const override final;
+  Constant(int);
+  virtual int Exec() const override final;
 };
 
-class unary_expr : public expr {
-  std::unique_ptr<expr> term;
+class UnaryExpr : public Expr {
+  std::unique_ptr<Expr> term_;
+  bool is_neg_;
 public:
-  bool is_neg;
-  unary_expr(std::unique_ptr<expr>&&, bool);
-  virtual int exec() const override final;
+  UnaryExpr(std::unique_ptr<Expr>&&, bool);
+  virtual int Exec() const override final;
 };
 
-class binary_expr : public expr {
-  std::vector<token> ops;
-  std::vector<std::unique_ptr<expr>> terms;
+class BinaryExpr : public Expr {
+  std::vector<Token> ops_;
+  std::vector<std::unique_ptr<Expr>> terms_;
 public:
-  binary_expr(std::vector<token>&&, std::vector<std::unique_ptr<expr>>&&);
-  virtual int exec() const override final;
+  BinaryExpr(std::vector<Token>&&, std::vector<std::unique_ptr<Expr>>&&);
+  virtual int Exec() const override final;
 };
 
-class program : public expr {
-  std::vector<std::unique_ptr<expr>> instructions;
+class Program : public Expr {
+  std::vector<std::unique_ptr<Expr>> instructions_;
 public:
-  program(std::vector<std::unique_ptr<expr>>&&);
-  virtual int exec() const override final;
+  Program(std::vector<std::unique_ptr<Expr>>&&);
+  virtual int Exec() const override final;
 };
 
-class parser {
-  lexer& _lex;
-  std::unique_ptr<unary_expr> read_unary_op(); 
-  std::unique_ptr<binary_expr> read_mul_div(); 
-  std::unique_ptr<binary_expr> read_add_sub(); 
+class Parser {
+  Lexer& lex_;
+  std::unique_ptr<UnaryExpr> ReadUnaryOp();
+  std::unique_ptr<BinaryExpr> ReadMulDiv();
+  std::unique_ptr<BinaryExpr> ReadAddSub();
 public:
-  explicit parser(lexer& lex);
-  std::unique_ptr<program> read_program(); 
+  explicit Parser(Lexer& lex);
+  std::unique_ptr<Program> ReadProgram();
 };
 
 template <class ...Types>
-constexpr const token& expect(const token& t) {
-	if (!(... || t.is<Types>()))
-		throw syntax_error(t);
+constexpr const Token& Expect(const Token& t) {
+	if (!(... || t.Is<Types>())) {
+		throw SyntaxError(t);
+}
 	return t;
 }
