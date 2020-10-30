@@ -40,7 +40,7 @@ bool Lexer::SkipEmptyLines() {
     for (; line.empty(); Trim(line)) {
       line_nb_++;
       if (!getline(fin_, line)) {
-        curr_ = Token{file_, sv_, line_nb_, types::Eof{}};
+        BuildToken<types::Eof>();
         return false;
       }
     }
@@ -62,29 +62,29 @@ void Lexer::NextToken() {
     int value;
     std::from_chars(sv_.data(), naN, value);
     length = static_cast<size_t>(naN - sv_.begin());
-    curr_ = Token(file_, sv_, line_nb_, types::Number{value});
+    BuildToken<types::Number>(value);
   } else {
     switch (c) {
     case '+':
-      curr_ = Token(file_, sv_, line_nb_, types::Add{});
+      BuildToken<types::Add>();
       break;
     case '-':
-      curr_ = Token(file_, sv_, line_nb_, types::Sub{});
+      BuildToken<types::Sub>();
       break;
     case '*':
-      curr_ = Token(file_, sv_, line_nb_, types::Mul{});
+      BuildToken<types::Mul>();
       break;
     case '/':
-      curr_ = Token(file_, sv_, line_nb_, types::Div{});
+      BuildToken<types::Div>();
       break;
     case '(':
-      curr_ = Token(file_, sv_, line_nb_, types::LPar{});
+      BuildToken<types::LPar>();
       break;
     case ')':
-      curr_ = Token(file_, sv_, line_nb_, types::RPar{});
+      BuildToken<types::RPar>();
       break;
     case ';':
-      curr_ = Token(file_, sv_, line_nb_, types::Eol{});
+      BuildToken<types::Eol>();
       break;
     default:
       throw LexerError(file_, sv_, line_nb_);

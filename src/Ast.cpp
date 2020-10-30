@@ -5,48 +5,17 @@
 Constant::Constant(int value)
     : value_(value) {}
 
-int Constant::Exec() const { return value_; }
-
 UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg)
     : term_{move(term)}
     , is_neg_(is_neg) {}
-
-int UnaryExpr::Exec() const { return is_neg_ ? -term_->Exec() : term_->Exec(); }
 
 BinaryExpr::BinaryExpr(std::vector<Token>&& ops,
                        std::vector<std::unique_ptr<Expr>>&& terms)
     : ops_{std::move(ops)}
     , terms_{std::move(terms)} {}
 
-int BinaryExpr::Exec() const {
-  int value = terms_.front()->Exec();
-  for (size_t i = 0; i < ops_.size();) {
-    Token op = ops_[i];
-    if (op.Is<types::Add>()) {
-      value += terms_[++i]->Exec();
-    } else if (op.Is<types::Sub>()) {
-      value -= terms_[++i]->Exec();
-    } else if (op.Is<types::Mul>()) {
-      value *= terms_[++i]->Exec();
-    } else if (op.Is<types::Div>()) {
-      value /= terms_[++i]->Exec();
-    } else {
-      throw SyntaxError(op);
-    }
-  }
-  return value;
-}
-
 Program::Program(std::vector<std::unique_ptr<Expr>>&& instructions)
     : instructions_{move(instructions)} {}
-
-int Program::Exec() const {
-  for (size_t i = 0; i < instructions_.size(); ++i) {
-    std::cout << "result of instruction " << i << " is ";
-    std::cout << instructions_[i]->Exec() << std::endl;
-  }
-  return 0;
-}
 
 Parser::Parser(Lexer& lex)
     : lex_(lex) {}
