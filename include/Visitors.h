@@ -1,17 +1,25 @@
 #pragma once
+
 #include <Ast.h>
 
-class BaseVisitor {
-public:
-  virtual ~BaseVisitor() = default;
-  virtual void Visit(std::unique_ptr<UnaryExpr>& e) = 0; \
-  virtual void Visit(std::unique_ptr<BinaryExpr>& e) = 0; \
-  virtual void Visit(std::unique_ptr<Program>& e) = 0; 
+class AbstractVisitor {
+ public:
+  virtual ~AbstractVisitor()                 = default;
+  virtual void Visit(const Constant* expr)   = 0;
+  virtual void Visit(const UnaryExpr* expr)  = 0;
+  virtual void Visit(const BinaryExpr* expr) = 0;
+  virtual void Visit(const Program* expr)    = 0;
 };
 
-class ShrinkOneChildBranches : public BaseVisitor {
-public:
-  void Visit(std::unique_ptr<UnaryExpr>& e) override final;
-  void Visit(std::unique_ptr<BinaryExpr>& e) override final;
-  void Visit(std::unique_ptr<Program>& e) override final;
+class ShrinkOneChildBranchesVisitor : public AbstractVisitor {
+ private:
+  std::unique_ptr<Expr> result_of_transformation_{nullptr};
+
+ public:
+  void Visit(const Constant* expr) override final;
+  void Visit(const UnaryExpr* expr) override final;
+  void Visit(const BinaryExpr* expr) override final;
+  void Visit(const Program* expr) override final;
+  const std::unique_ptr<Expr>& GetResult() const&;
+  std::unique_ptr<Expr>&& GetResult() &&;
 };

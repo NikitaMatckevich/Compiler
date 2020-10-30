@@ -1,5 +1,6 @@
-#include <Visitors.h>
 #include <Lexer.h>
+#include <Visitors.h>
+
 #include <iostream>
 #include <vector>
 
@@ -8,8 +9,11 @@ int main() {
     Lexer lexer("example.txt");
     Parser parser(lexer);
     auto ptr = parser.ReadProgram();
-    ShrinkOneChildBranches opt;
-    opt.Visit(ptr);
+
+    ShrinkOneChildBranchesVisitor opt;
+    ptr->Accept(&opt);
+    auto transformed_program = std::move(opt).GetResult();
+
     std::cout << "Program returned code " << 0 << std::endl;
     return 0;
   } catch (const CompileError& e) {
