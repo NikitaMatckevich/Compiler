@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
 
-set(CMAKE_C_COMPILER /usr/bin/x86_64-linux-gnu-gcc-9)
-set(CMAKE_CXX_COMPILER /usr/bin/x86_64-linux-gnu-g++-9)
-
 project(Compiler)
 
 set(CMAKE_CXX_STANDARD 17)
