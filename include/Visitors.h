@@ -38,3 +38,9 @@ class ExecuteVisitor : public AbstractVisitor {
 
   const std::vector<int>& GetResults() const;
 };
+
+template <class ConcreteExpr>
+void VisitableExpr<ConcreteExpr>::Accept(AbstractVisitor* visitor) const {
+  visitor->Visit(static_cast<const ConcreteExpr*>(this));
+}
+
