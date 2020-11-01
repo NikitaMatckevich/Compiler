@@ -23,16 +23,27 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
 
 int main() {
   try {
-    Lexer lexer("example.txt");
+    std::ifstream fin("example.txt");
+    Lexer lexer(fin);
     Parser parser(lexer);
-    auto ptr = parser.ReadProgram();
+    std::unique_ptr<Expr> ptr = parser.ReadProgram();
 
-    ShrinkOneChildBranchesVisitor opt;
-    ptr->Accept(&opt);
-    auto transformed_program = std::move(opt).GetResult();
+    // ShrinkOneChildBranchesVisitor opt;
+    // ptr->Accept(&opt);
+    // auto transformed_program = std::move(opt).GetResult();
+
+    TreeLoggingVisitor logging_visitor;
+
+    std::cout << "Before transformation:\n";
+    ptr->Accept(&logging_visitor);
+
+    ShrinkMutatingVisitor().ApplyTo(ptr);
+
+    std::cout << "After transformation:\n";
+    ptr->Accept(&logging_visitor);
 
     ExecuteVisitor exec;
-    transformed_program->Accept(&exec);
+    ptr->Accept(&exec);
     std::cout << "Results: " << exec.GetResults() << std::endl;
 
     // std::cout << "Program returned code " << 0 << std::endl;
