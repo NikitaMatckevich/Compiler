@@ -2,55 +2,54 @@
 
 #include <Ast.h>
 
-class AbstractVisitor {
+class ConstVisitor {
  public:
-  virtual ~AbstractVisitor()                 = default;
+  virtual ~ConstVisitor()                    = default;
   virtual void Visit(const Constant* expr)   = 0;
   virtual void Visit(const UnaryExpr* expr)  = 0;
   virtual void Visit(const BinaryExpr* expr) = 0;
   virtual void Visit(const Program* expr)    = 0;
 };
 
-class AbstractMutatingVisitor {
- public:
-  virtual ~AbstractMutatingVisitor()                    = default;
-  virtual std::unique_ptr<Expr> Visit(Constant* expr)   = 0;
-  virtual std::unique_ptr<Expr> Visit(UnaryExpr* expr)  = 0;
-  virtual std::unique_ptr<Expr> Visit(BinaryExpr* expr) = 0;
-  virtual std::unique_ptr<Expr> Visit(Program* expr)    = 0;
-
+class MutatingVisitor {
+ protected:
+  std::unique_ptr<Expr> mutator_{nullptr};
   virtual void ApplyTo(std::unique_ptr<Expr>& expr) final;
+ public:
+  virtual ~MutatingVisitor()           = default;
+  virtual void Visit(Constant* expr)   = 0;
+  virtual void Visit(UnaryExpr* expr)  = 0;
+  virtual void Visit(BinaryExpr* expr) = 0;
+  virtual void Visit(Program* expr)    = 0;
 };
 
-class ShrinkOneChildBranchesVisitor : public AbstractVisitor {
+class ShrinkConstVisitor : public ConstVisitor {
  private:
-  std::unique_ptr<Expr> result_of_transformation_{nullptr};
-
+  std::unique_ptr<Expr> shrinked_copy_{nullptr};
  public:
   void Visit(const Constant* expr) override final;
   void Visit(const UnaryExpr* expr) override final;
   void Visit(const BinaryExpr* expr) override final;
   void Visit(const Program* expr) override final;
-  const std::unique_ptr<Expr>& GetResult() const&;
-  std::unique_ptr<Expr>&& GetResult() &&;
+  
+  const std::unique_ptr<Expr>& GetResults() const&;
+  std::unique_ptr<Expr>&& GetResults() &&;
 };
 
-class ExecuteVisitor : public AbstractVisitor {
+class ExecuteVisitor : public ConstVisitor {
  private:
   std::vector<int> stack_;
-
   void DispatchBinOp(const Token& token);
-
  public:
   void Visit(const Constant* expr) override final;
   void Visit(const UnaryExpr* expr) override final;
   void Visit(const BinaryExpr* expr) override final;
   void Visit(const Program* expr) override final;
-
+  
   const std::vector<int>& GetResults() const;
 };
 
-class TreeLoggingVisitor : public AbstractVisitor {
+class TreeLoggingVisitor : public ConstVisitor {
  public:
   void Visit(const Constant* expr) override;
   void Visit(const UnaryExpr* expr) override;
@@ -80,7 +79,7 @@ class TreeLoggingVisitor : public AbstractVisitor {
     std::cout.setf(std::ios_base::boolalpha);
     std::cout << (is_last ? kHLastEdge : kHEdge) << name << ": ";
     preamble_description_.push_back(is_last);
-    subtree->Accept(this);
+    subtree->AcceptConst(this);
     preamble_description_.pop_back();
     std::cout.flags(flags);
   }
@@ -93,21 +92,20 @@ class TreeLoggingVisitor : public AbstractVisitor {
   void Preamble() const;
 };
 
-class ShrinkMutatingVisitor : public AbstractMutatingVisitor {
+class ShrinkMutatingVisitor : public MutatingVisitor {
  public:
-  std::unique_ptr<Expr> Visit(Constant* expr) override;
-  std::unique_ptr<Expr> Visit(UnaryExpr* expr) override;
-  std::unique_ptr<Expr> Visit(BinaryExpr* expr) override;
-  std::unique_ptr<Expr> Visit(Program* expr) override;
+  void Visit(Constant* expr) override;
+  void Visit(UnaryExpr* expr) override;
+  void Visit(BinaryExpr* expr) override;
+  void Visit(Program* expr) override;
 };
 
 template <class ConcreteExpr>
-void VisitableExpr<ConcreteExpr>::Accept(AbstractVisitor* visitor) const {
+void VisitableExpr<ConcreteExpr>::AcceptConst(ConstVisitor* visitor) const {
   visitor->Visit(static_cast<const ConcreteExpr*>(this));
 }
 
 template <class ConcreteExpr>
-std::unique_ptr<Expr>
-VisitableExpr<ConcreteExpr>::AcceptMutating(AbstractMutatingVisitor* visitor) {
-  return visitor->Visit(static_cast<ConcreteExpr*>(this));
+void VisitableExpr<ConcreteExpr>::AcceptMutating(MutatingVisitor* visitor) {
+  visitor->Visit(static_cast<ConcreteExpr*>(this));
 }

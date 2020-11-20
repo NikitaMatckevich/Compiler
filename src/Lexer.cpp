@@ -4,8 +4,7 @@
 #include <fstream>
 //#include <iostream>
 
-Lexer::Lexer(std::istream &in) : in_(in) {
-}
+Lexer::Lexer(std::istream &in) : in_(in) {}
 
 /*
 Lexer::Lexer(std::string&& file)
@@ -21,8 +20,8 @@ Lexer::Lexer(std::string&& file)
   }
   NextToken();
 }
-*/
-/*
+
+
 void Lexer::Trim(std::string& s) {
   auto finder = [](auto first, auto last) {
     return std::find_if(first, last,
@@ -31,11 +30,11 @@ void Lexer::Trim(std::string& s) {
   s.erase(s.begin(), finder(s.begin(), s.end()));
   s.erase(finder(s.rbegin(), s.rend()).base(), s.end());
 }
-*/
 
-// bool Lexer::ReachedEOF() const noexcept { return curr_.Is<types::Eof>(); }
 
-/*
+bool Lexer::ReachedEOF() const noexcept { return curr_.Is<types::Eof>(); }
+
+
 bool Lexer::SkipEmptyLines() {
   if (sv_.empty()) {
     std::string line;
@@ -94,6 +93,7 @@ void Lexer::NextToken() {
     }
   }
 }
+
 TokenContext Lexer::GetTokenContext(size_t token_length) const {
   return TokenContext(reversed_line_list_.front(), GetCurrentLineNumber(), GetCurrentLineOffset(), token_length);
 }

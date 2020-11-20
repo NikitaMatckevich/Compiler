@@ -5,26 +5,22 @@
 #include <memory>
 #include <stdexcept>
 
-class AbstractVisitor;
-class AbstractMutatingVisitor;
+class ConstVisitor;
+class MutatingVisitor;
 
 class Expr {
  public:
-  virtual ~Expr()                                                = default;
-  virtual void Accept(AbstractVisitor* visitor) const            = 0;
-
- protected:
-  virtual std::unique_ptr<Expr> AcceptMutating(AbstractMutatingVisitor* visitor) = 0;
-  friend class AbstractMutatingVisitor;
+  virtual ~Expr() = default;
+  virtual void AcceptConst(ConstVisitor* visitor) const = 0;
+  virtual void AcceptMutating(MutatingVisitor* visitor) = 0;
+  // friend class MutatingVisitor;
 };
 
 template <class ConcreteExpr>
 class VisitableExpr : public Expr {
  public:
-  void Accept(AbstractVisitor* visitor) const override;
-
- protected:
-  std::unique_ptr<Expr> AcceptMutating(AbstractMutatingVisitor* visitor) override;
+  void AcceptConst(ConstVisitor* visitor) const override;
+  void AcceptMutating(MutatingVisitor* visitor) override;
 };
 
 class Constant : public VisitableExpr<Constant> {

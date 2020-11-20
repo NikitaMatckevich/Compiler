@@ -1,64 +1,63 @@
 #include <Visitors.h>
 
-void AbstractMutatingVisitor::ApplyTo(std::unique_ptr<Expr>& expr) {
-  auto result = expr->AcceptMutating(this);
-  if (result) {
-    expr = std::move(result);
-  }
+void MutatingVisitor::ApplyTo(std::unique_ptr<Expr>& expr) {
+  expr->AcceptMutating(this);
+  if (mutator_)
+    expr = std::move(mutator_);
 }
 
-void ShrinkOneChildBranchesVisitor::Visit(const Constant* expr) {
-  result_of_transformation_ = std::make_unique<Constant>(expr->Value());
+void ShrinkConstVisitor::Visit(const Constant* expr) {
+  shrinked_copy_ = std::make_unique<Constant>(expr->Value());
 }
 
-void ShrinkOneChildBranchesVisitor::Visit(const UnaryExpr* expr) {
-  expr->Term()->Accept(this);
+void ShrinkConstVisitor::Visit(const UnaryExpr* expr) {
+  expr->Term()->AcceptConst(this);
   if (expr->IsNeg()) {
-    result_of_transformation_ =
-        std::make_unique<UnaryExpr>(std::move(result_of_transformation_), true);
+    shrinked_copy_ =
+        std::make_unique<UnaryExpr>(std::move(shrinked_copy_), true);
   }
 }
 
-void ShrinkOneChildBranchesVisitor::Visit(const BinaryExpr* expr) {
-  expr->Terms().front()->Accept(this);
+void ShrinkConstVisitor::Visit(const BinaryExpr* expr) {
+  expr->Terms().front()->AcceptConst(this);
   if (expr->Terms().size() == 1) {
     return;
   }
 
   std::vector<std::unique_ptr<Expr>> terms;
   terms.reserve(expr->Terms().size());
-  terms.emplace_back(std::move(result_of_transformation_));
+  terms.emplace_back(std::move(shrinked_copy_));
 
   for (size_t i = 1; i < expr->Terms().size(); ++i) {
-    expr->Terms()[i]->Accept(this);
-    terms.emplace_back(std::move(result_of_transformation_));
+    expr->Terms()[i]->AcceptConst(this);
+    terms.emplace_back(std::move(shrinked_copy_));
   }
 
   std::vector<Token> ops_copy = expr->Ops();
 
-  result_of_transformation_ =
+  shrinked_copy_ =
       std::make_unique<BinaryExpr>(std::move(ops_copy), std::move(terms));
 }
 
-void ShrinkOneChildBranchesVisitor::Visit(const Program* expr) {
+void ShrinkConstVisitor::Visit(const Program* expr) {
   std::vector<std::unique_ptr<Expr>> instructions;
   instructions.reserve(expr->Instructions().size());
 
   for (const auto& instruction : expr->Instructions()) {
-    instruction->Accept(this);
-    instructions.emplace_back(std::move(result_of_transformation_));
+    instruction->AcceptConst(this);
+    instructions.emplace_back(std::move(shrinked_copy_));
   }
 
-  result_of_transformation_ =
+  shrinked_copy_ =
       std::make_unique<Program>(std::move(instructions));
 }
 
-const std::unique_ptr<Expr>& ShrinkOneChildBranchesVisitor::GetResult() const& {
-  return result_of_transformation_;
+const std::unique_ptr<Expr>& ShrinkConstVisitor::GetResults() const& {
+  return shrinked_copy_;
 }
 
-std::unique_ptr<Expr>&& ShrinkOneChildBranchesVisitor::GetResult() && {
-  return std::move(result_of_transformation_);
+std::unique_ptr<Expr>&& ShrinkConstVisitor::GetResults() && {
+  return std::move(shrinked_copy_);
 }
 
 void ExecuteVisitor::Visit(const Constant* expr) {
@@ -66,24 +65,24 @@ void ExecuteVisitor::Visit(const Constant* expr) {
 }
 
 void ExecuteVisitor::Visit(const UnaryExpr* expr) {
-  expr->Term()->Accept(this);
+  expr->Term()->AcceptConst(this);
   if (expr->IsNeg()) {
     stack_.back() = -stack_.back();
   }
 }
 
 void ExecuteVisitor::Visit(const BinaryExpr* expr) {
-  expr->Terms().front()->Accept(this);
+  expr->Terms().front()->AcceptConst(this);
 
   for (size_t i = 1; i < expr->Terms().size(); ++i) {
-    expr->Terms()[i]->Accept(this);
+    expr->Terms()[i]->AcceptConst(this);
     DispatchBinOp(expr->Ops()[i - 1]);
   }
 }
 
 void ExecuteVisitor::Visit(const Program* expr) {
   for (const auto& instruction : expr->Instructions()) {
-    instruction->Accept(this);
+    instruction->AcceptConst(this);
   }
 }
 
@@ -110,35 +109,32 @@ void ExecuteVisitor::DispatchBinOp(const Token& token) {
   stack_.push_back(result);
 }
 
-std::unique_ptr<Expr> ShrinkMutatingVisitor::Visit(Constant* /* expr */) {
-  return nullptr;
+void ShrinkMutatingVisitor::Visit(Constant* /* expr */) {}
+
+void ShrinkMutatingVisitor::Visit(UnaryExpr* expr) {
+
+  if (!expr->IsNeg())
+    mutator_ = std::move(expr->Term());
+
 }
 
-std::unique_ptr<Expr> ShrinkMutatingVisitor::Visit(UnaryExpr* expr) {
-  if (expr->IsNeg()) {
-    return nullptr;
-  }
-
-  return std::move(expr->Term());
-}
-
-std::unique_ptr<Expr> ShrinkMutatingVisitor::Visit(BinaryExpr* expr) {
+void ShrinkMutatingVisitor::Visit(BinaryExpr* expr) {
+  
   for (auto& term : expr->Terms()) {
     ApplyTo(term);
   }
 
-  if (expr->Terms().size() == 1) {
-    return std::move(expr->Terms().front());
-  }
+  if (expr->Terms().size() == 1)
+    mutator_ = std::move(expr->Terms().front());
 
-  return nullptr;
 }
 
-std::unique_ptr<Expr> ShrinkMutatingVisitor::Visit(Program* expr) {
+void ShrinkMutatingVisitor::Visit(Program* expr) {
+  
   for (auto& instruction : expr->Instructions()) {
     ApplyTo(instruction);
   }
-  return nullptr;
+
 }
 
 void TreeLoggingVisitor::Visit(const Constant* expr) {

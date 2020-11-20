@@ -23,31 +23,36 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
 
 int main() {
   try {
-    std::ifstream fin("example.txt");
-    Lexer lexer(fin);
-    Parser parser(lexer);
+
+    std::ifstream fin("../example.txt");
+    
+    if (!fin.good())
+      throw std::runtime_error("file not found");
+
+    Lexer lexer{fin};
+    Parser parser{lexer};
     std::unique_ptr<Expr> ptr = parser.ReadProgram();
 
-    // ShrinkOneChildBranchesVisitor opt;
-    // ptr->Accept(&opt);
-    // auto transformed_program = std::move(opt).GetResult();
 
-    TreeLoggingVisitor logging_visitor;
+    TreeLoggingVisitor logger;
 
     std::cout << "Before transformation:\n";
-    ptr->Accept(&logging_visitor);
+    ptr->AcceptConst(&logger);
 
-    ShrinkMutatingVisitor().ApplyTo(ptr);
+    ShrinkMutatingVisitor shrinker;
+    ptr->AcceptMutating(&shrinker);
 
     std::cout << "After transformation:\n";
-    ptr->Accept(&logging_visitor);
+    ptr->AcceptConst(&logger);
 
     ExecuteVisitor exec;
-    ptr->Accept(&exec);
+    ptr->AcceptConst(&exec);
+
     std::cout << "Results: " << exec.GetResults() << std::endl;
 
     // std::cout << "Program returned code " << 0 << std::endl;
     return 0;
+
   } catch (const CompileError& e) {
     std::cerr << e.what() << std::endl;
     return 1;

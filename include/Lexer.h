@@ -9,16 +9,15 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 class Lexer {
+ private:
   std::istream& in_;
   std::forward_list<std::string> reversed_line_list_;
   std::string_view current_line_;
   size_t current_line_number_{0};
   std::optional<Token> last_token_{std::nullopt};
-
-  // bool ReachedEOF() const noexcept;
-  // bool SkipEmptyLines();
 
   bool NextLine() {
     std::string str;
@@ -34,17 +33,19 @@ class Lexer {
   }
 
   void SkipWhitespaces() {
-    while (true) {
-      if (current_line_.empty()) {
-        if (!NextLine()) {
-          return;
-        }
-      } else if (std::isspace(current_line_.front())) {
-        current_line_.remove_prefix(1);
-      } else {
-        break;
-      }
-    }
+
+    auto space_counter = [&]() {
+      return std::find_if_not(current_line_.begin(), current_line_.end(),
+                              [](unsigned char c) {
+                                return std::isspace(c);
+                              }) - current_line_.begin();
+    };
+
+    do
+      current_line_.remove_prefix(space_counter());
+    while
+      (current_line_.empty() && NextLine());
+
   }
 
   TokenContext GetTokenContext(size_t token_length) const;
