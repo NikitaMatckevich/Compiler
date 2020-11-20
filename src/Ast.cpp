@@ -1,13 +1,7 @@
 #include <Ast.h>
 #include <Visitors.h>
 
-#include <iostream>
 #include <vector>
-
-template <class ConcreteExpr>
-void VisitableExpr<ConcreteExpr>::Accept(AbstractVisitor* visitor) const {
-  visitor->Visit(static_cast<const ConcreteExpr*>(this));
-}
 
 Constant::Constant(int value)
     : value_(value) {}
