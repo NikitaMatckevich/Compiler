@@ -10,10 +10,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 set(SOURCE
     ../src/Main.cpp
-    ../src/Errors.cpp
     ../src/Lexer.cpp
     ../src/Ast.cpp
-    ../src/Visitors.cpp
+    ../src/ShrinkConstVisitor.cpp
+    ../src/ShrinkMutatingVisitor.cpp
+    ../src/ExecuteVisitor.cpp
+    ../src/TreeLoggingVisitor.cpp
 )
 
 include_directories(include)

@@ -1,5 +1,6 @@
 #include <Ast.h>
-#include <Visitors.h>
+#include <ConstVisitors.h>
+#include <MutatingVisitors.h>
 
 #include <vector>
 

@@ -1,5 +1,6 @@
 #include <Lexer.h>
-#include <Visitors.h>
+#include <ConstVisitors.h>
+#include <MutatingVisitors.h>
 
 #include <iostream>
 #include <vector>
@@ -37,16 +38,16 @@ int main() {
     TreeLoggingVisitor logger;
 
     std::cout << "Before transformation:\n";
-    ptr->AcceptConst(&logger);
+    ptr->Accept(&logger);
 
     ShrinkMutatingVisitor shrinker;
-    ptr->AcceptMutating(&shrinker);
+    ptr->Accept(&shrinker);
 
     std::cout << "After transformation:\n";
-    ptr->AcceptConst(&logger);
+    ptr->Accept(&logger);
 
     ExecuteVisitor exec;
-    ptr->AcceptConst(&exec);
+    ptr->Accept(&exec);
 
     std::cout << "Results: " << exec.GetResults() << std::endl;
 

@@ -11,16 +11,15 @@ class MutatingVisitor;
 class Expr {
  public:
   virtual ~Expr() = default;
-  virtual void AcceptConst(ConstVisitor* visitor) const = 0;
-  virtual void AcceptMutating(MutatingVisitor* visitor) = 0;
-  // friend class MutatingVisitor;
+  virtual void Accept(ConstVisitor* visitor) const = 0;
+  virtual void Accept(MutatingVisitor* visitor) = 0;
 };
 
 template <class ConcreteExpr>
 class VisitableExpr : public Expr {
  public:
-  void AcceptConst(ConstVisitor* visitor) const override;
-  void AcceptMutating(MutatingVisitor* visitor) override;
+  void Accept(ConstVisitor* visitor) const override;
+  void Accept(MutatingVisitor* visitor) override;
 };
 
 class Constant : public VisitableExpr<Constant> {
