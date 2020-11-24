@@ -5,21 +5,37 @@
 class ConstVisitor {
  public:
   virtual ~ConstVisitor() = default;
-  virtual void Visit(const Constant* expr)   = 0;
-  virtual void Visit(const UnaryExpr* expr)  = 0;
-  virtual void Visit(const BinaryExpr* expr) = 0;
-  virtual void Visit(const Program* expr)    = 0;
+  virtual void Visit(const Constant* expr)    = 0;
+  virtual void Visit(const Variable* expr)    = 0;
+  virtual void Visit(const Declaration* expr) = 0;
+  virtual void Visit(const Assignment* expr)  = 0;
+  virtual void Visit(const UnaryExpr* expr)   = 0;
+  virtual void Visit(const BinaryExpr* expr)  = 0;
+  virtual void Visit(const Program* expr)     = 0;
+  
+  #define VISITABLE\
+  void Visit(const Constant* expr) override final;\
+  void Visit(const Variable* expr) override final;\
+  void Visit(const Declaration* expr) override final;\
+  void Visit(const Assignment* expr) override final;\
+  void Visit(const UnaryExpr* expr) override final;\
+  void Visit(const BinaryExpr* expr) override final;\
+  void Visit(const Program* expr) override final;
+};
+
+class LvalueRecognizeVisitor : public ConstVisitor {
+ private:
+  bool is_lvalue_ = false;
+ public:
+  VISITABLE
+  bool GetResults() const;
 };
 
 class ShrinkConstVisitor : public ConstVisitor {
  private:
   std::unique_ptr<Expr> shrinked_copy_{nullptr};
  public:
-  void Visit(const Constant* expr) override final;
-  void Visit(const UnaryExpr* expr) override final;
-  void Visit(const BinaryExpr* expr) override final;
-  void Visit(const Program* expr) override final;
-  
+  VISITABLE
   const std::unique_ptr<Expr>& GetResults() const&;
   std::unique_ptr<Expr>&& GetResults() &&;
 };
@@ -29,21 +45,11 @@ class ExecuteVisitor : public ConstVisitor {
   std::vector<int> stack_;
   void DispatchBinOp(const Token& token);
  public:
-  void Visit(const Constant* expr) override final;
-  void Visit(const UnaryExpr* expr) override final;
-  void Visit(const BinaryExpr* expr) override final;
-  void Visit(const Program* expr) override final;
-  
+  VISITABLE
   const std::vector<int>& GetResults() const;
 };
 
-class TreeLoggingVisitor : public ConstVisitor {
- public:
-  void Visit(const Constant* expr) override;
-  void Visit(const UnaryExpr* expr) override;
-  void Visit(const BinaryExpr* expr) override;
-  void Visit(const Program* expr) override;
-
+class TreeLoggingVisitor : public ConstVisitor { 
  private:
   static constexpr char kHEdge[] = "+-- ";
   static constexpr char kHLastEdge[] = "+-- ";
@@ -78,7 +84,12 @@ class TreeLoggingVisitor : public ConstVisitor {
   }
 
   void Preamble() const;
+
+ public:
+  VISITABLE
 };
+
+#undef VISITABLE
 
 template <class ConcreteExpr>
 void VisitableExpr<ConcreteExpr>::Accept(ConstVisitor* visitor) const {

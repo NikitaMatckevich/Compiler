@@ -23,15 +23,49 @@ class VisitableExpr : public Expr {
 };
 
 class Constant : public VisitableExpr<Constant> {
-  int value_;
+  Token number_;
 
  public:
-  Constant(int value);
-  inline int Value() const { return value_; }
-  inline int& Value() { // Do we really need this function, huh?
-    return value_;
+  Constant(Token&& number);
+  inline const Token&  Value() const noexcept { return number_; }
+  inline Token& Value() noexcept { // Do we really need this function, huh?
+    return number_;
   }
 };
+
+class Variable : public VisitableExpr<Variable> {
+  Token name_;
+
+public:
+  Variable(Token&& name);
+  inline const Token& Name() const noexcept { return name_; }
+  inline Token& Name() noexcept { return name_; }
+};
+
+class Declaration : public VisitableExpr<Declaration> {
+  Token name_;
+  std::unique_ptr<Expr> rhs_;
+
+ public:
+  Declaration(Token&& name, std::unique_ptr<Expr>&& rhs);
+  inline const Token& Name() const noexcept { return name_; }
+  inline Token& Name() noexcept { return name_; }
+  inline const std::unique_ptr<Expr>& Rhs() const noexcept { return rhs_; }
+  inline std::unique_ptr<Expr>& Rhs() noexcept { return rhs_; }
+};
+
+class Assignment : public VisitableExpr<Assignment> {
+  std::vector<std::unique_ptr<Expr>> terms_;
+
+ public:
+  Assignment(std::vector<std::unique_ptr<Expr>>&& terms);
+  inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
+    return terms_;
+  }
+  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
+    return terms_;
+  }
+}; 
 
 class UnaryExpr : public VisitableExpr<UnaryExpr> {
   std::unique_ptr<Expr> term_;
@@ -39,10 +73,10 @@ class UnaryExpr : public VisitableExpr<UnaryExpr> {
 
  public:
   UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg);
-  inline const std::unique_ptr<Expr>& Term() const { return term_; }
-  inline std::unique_ptr<Expr>& Term() { return term_; }
-  inline bool IsNeg() const { return is_neg_; }
-  inline bool& IsNeg() { return is_neg_; }
+  inline const std::unique_ptr<Expr>& Term() const noexcept { return term_; }
+  inline std::unique_ptr<Expr>& Term() noexcept { return term_; }
+  inline bool IsNeg() const noexcept { return is_neg_; }
+  inline bool& IsNeg() noexcept { return is_neg_; }
 };
 
 class BinaryExpr : public VisitableExpr<BinaryExpr> {
@@ -52,12 +86,14 @@ class BinaryExpr : public VisitableExpr<BinaryExpr> {
  public:
   BinaryExpr(std::vector<Token>&& ops,
              std::vector<std::unique_ptr<Expr>>&& terms);
-  inline const std::vector<Token>& Ops() const { return ops_; }
-  inline std::vector<Token>& Ops() { return ops_; }
-  inline const std::vector<std::unique_ptr<Expr>>& Terms() const {
+  inline const std::vector<Token>& Ops() const noexcept { return ops_; }
+  inline std::vector<Token>& Ops() noexcept { return ops_; }
+  inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
     return terms_;
   }
-  inline std::vector<std::unique_ptr<Expr>>& Terms() { return terms_; }
+  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
+    return terms_;
+  }
 };
 
 class Program : public VisitableExpr<Program> {
@@ -65,11 +101,10 @@ class Program : public VisitableExpr<Program> {
 
  public:
   Program(std::vector<std::unique_ptr<Expr>>&& instructions);
-  inline const std::vector<std::unique_ptr<Expr>>& Instructions() const {
+  inline const std::vector<std::unique_ptr<Expr>>& Instructions() const noexcept {
     return instructions_;
   }
-
-  inline std::vector<std::unique_ptr<Expr>>& Instructions() {
+  inline std::vector<std::unique_ptr<Expr>>& Instructions() noexcept {
     return instructions_;
   }
 };
@@ -77,6 +112,8 @@ class Program : public VisitableExpr<Program> {
 class Parser {
   Lexer& lex_;
   std::unique_ptr<UnaryExpr> ReadUnaryOp();
+  std::unique_ptr<Declaration> ReadDeclaration();
+  std::unique_ptr<Expr> ReadAssignment();
   std::unique_ptr<BinaryExpr> ReadMulDiv();
   std::unique_ptr<BinaryExpr> ReadAddSub();
 

@@ -12,10 +12,11 @@ set(SOURCE
     ../src/Main.cpp
     ../src/Lexer.cpp
     ../src/Ast.cpp
-    ../src/ShrinkConstVisitor.cpp
+    #../src/ShrinkConstVisitor.cpp
     ../src/ShrinkMutatingVisitor.cpp
-    ../src/ExecuteVisitor.cpp
+    #../src/ExecuteVisitor.cpp
     ../src/TreeLoggingVisitor.cpp
+    ../src/LvalueRecognizeVisitor.cpp
 )
 
 include_directories(include)

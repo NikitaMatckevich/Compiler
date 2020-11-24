@@ -5,17 +5,22 @@
 #include <variant>
 
 namespace types {
-struct Number {
+
+struct Number     {
   int value;
 };
-struct Add {};
-struct Sub {};
-struct Mul {};
-struct Div {};
-struct LPar {};
-struct RPar {};
-struct Eol {};
-struct Eof {};
+struct Add        {};
+struct Sub        {};
+struct Mul        {};
+struct Div        {};
+struct LPar       {};
+struct RPar       {};
+struct Eol        {};
+struct Eof        {};
+struct Identifier {};
+struct Double     {};
+struct Assignment {};
+
 } // namespace types
 
 class TokenContext {
@@ -82,8 +87,11 @@ class Token {
   const TokenContext& GetContext() const { return context_; }
 
  private:
+
   std::variant<types::Number, types::Add, types::Sub, types::Mul, types::Div,
-               types::LPar, types::RPar, types::Eol, types::Eof>
-      token_data_;
+               types::LPar, types::RPar, types::Eol, types::Eof,
+               types::Identifier, types::Double, types::Assignment>
+  token_data_;
+
   TokenContext context_;
 };

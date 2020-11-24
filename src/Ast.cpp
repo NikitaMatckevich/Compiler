@@ -4,11 +4,21 @@
 
 #include <vector>
 
-Constant::Constant(int value)
-    : value_(value) {}
+Constant::Constant(Token&& number)
+    : number_{std::move(number)} {}
+
+Variable::Variable(Token&& name)
+    : name_{std::move(name)} {}
+
+Declaration::Declaration(Token&& name, std::unique_ptr<Expr>&& rhs)
+    : name_{std::move(name)}
+    , rhs_{std::move(rhs)} {}
+
+Assignment::Assignment(std::vector<std::unique_ptr<Expr>>&& terms)
+    : terms_{std::move(terms)} {}
 
 UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg)
-    : term_{move(term)}
+    : term_{std::move(term)}
     , is_neg_(is_neg) {}
 
 BinaryExpr::BinaryExpr(std::vector<Token>&& ops,
@@ -33,10 +43,14 @@ std::unique_ptr<UnaryExpr> Parser::ReadUnaryOp() {
     Expect<types::RPar>(lex_.Get());
     return p;
   } else {
-    return std::make_unique<UnaryExpr>(
-        std::make_unique<Constant>(
-            Expect<types::Number>(t).As<types::Number>().value),
-        is_neg);
+    if (t.Is<types::Number>()) {
+      return
+      std::make_unique<UnaryExpr>(std::make_unique<Constant>(std::move(t)), is_neg);
+    } else {
+      Expect<types::Identifier>(t);
+      return
+      std::make_unique<UnaryExpr>(std::make_unique<Variable>(std::move(t)), is_neg);
+    }
   }
 }
 
@@ -49,7 +63,6 @@ std::unique_ptr<BinaryExpr> Parser::ReadMulDiv() {
     ops.push_back(lex_.Get());
     terms.emplace_back(ReadUnaryOp());
   }
-  Expect<types::Eol, types::RPar, types::Add, types::Sub>(t);
   return std::make_unique<BinaryExpr>(std::move(ops), std::move(terms));
 }
 
@@ -62,14 +75,50 @@ std::unique_ptr<BinaryExpr> Parser::ReadAddSub() {
     ops.push_back(lex_.Get());
     terms.emplace_back(ReadMulDiv());
   }
-  Expect<types::Eol, types::RPar>(t);
   return std::make_unique<BinaryExpr>(std::move(ops), std::move(terms));
+}
+
+std::unique_ptr<Declaration> Parser::ReadDeclaration() {
+  lex_.Get();
+  Token name = lex_.Get();
+  Expect<types::Identifier>(name);
+  std::unique_ptr<Expr> rhs{nullptr};
+  if (lex_.Peek().Is<types::Assignment>()) {
+    lex_.Get();
+    rhs = ReadAddSub();
+  }
+  return std::make_unique<Declaration>(std::move(name), std::move(rhs));
+}
+
+std::unique_ptr<Expr> Parser::ReadAssignment() {
+  std::vector<std::unique_ptr<Expr>> terms;
+  terms.emplace_back(ReadAddSub());
+  while (lex_.Peek().Is<types::Assignment>()) {
+    LvalueRecognizeVisitor lrv;
+    terms.back()->Accept(&lrv);
+    if (lrv.GetResults()) {
+      lex_.Get();
+      terms.emplace_back(ReadAddSub());
+    }
+    else {
+      throw SyntaxError(lex_.Peek());
+    }
+  }
+  if (terms.size() == 1)
+    return std::move(terms.back());
+  else
+    return std::make_unique<Assignment>(std::move(terms));
 }
 
 std::unique_ptr<Program> Parser::ReadProgram() {
   std::vector<std::unique_ptr<Expr>> instructions;
-  for (; !lex_.Peek().Is<types::Eof>(); lex_.Get()) {
-    instructions.emplace_back(ReadAddSub());
+  Token t;
+  while (!(t = lex_.Peek()).Is<types::Eof>()) {
+    if (t.Is<types::Double>())
+      instructions.emplace_back(ReadDeclaration());
+    else
+      instructions.emplace_back(ReadAssignment());
+    lex_.Get();
   }
   return std::make_unique<Program>(std::move(instructions));
 }

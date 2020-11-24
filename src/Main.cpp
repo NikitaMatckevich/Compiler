@@ -34,7 +34,6 @@ int main() {
     Parser parser{lexer};
     std::unique_ptr<Expr> ptr = parser.ReadProgram();
 
-
     TreeLoggingVisitor logger;
 
     std::cout << "Before transformation:\n";
@@ -46,11 +45,9 @@ int main() {
     std::cout << "After transformation:\n";
     ptr->Accept(&logger);
 
-    ExecuteVisitor exec;
-    ptr->Accept(&exec);
-
-    std::cout << "Results: " << exec.GetResults() << std::endl;
-
+    //ExecuteVisitor exec;
+    //ptr->Accept(&exec);
+    //std::cout << "Results: " << exec.GetResults() << std::endl;
     // std::cout << "Program returned code " << 0 << std::endl;
     return 0;
 
