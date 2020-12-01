@@ -1,31 +1,37 @@
 #include <Lexer.h>
 #include <algorithm>
 #include <charconv>
-#include <fstream>
-// #include <iostream>
+#include <stdexcept>
 
-Lexer::Lexer(std::istream &in) : in_(in) {}
+Lexer::Lexer(const std::string& path) {
+  source_.open(path);
+}
+
+Lexer::~Lexer() {
+  source_.close();
+}
 
 void Lexer::NextToken() {
   SkipWhitespaces();
 
-  if (current_line_.empty()) {
+  if (current_view_.empty()) {
     CutToken<types::Eof>(0);
     return;
   }
 
-  unsigned char c = current_line_.front();
+  unsigned char c = current_view_.front();
   if (std::isdigit(c)) {
     int value = 0xDEADBEEF;
-    auto result = std::from_chars(current_line_.data(), current_line_.data() + current_line_.length(), value, 10);
-    CutToken<types::Number>(result.ptr - current_line_.data(), value);
+    auto result = std::from_chars(current_view_.data(),
+      current_view_.data() + current_view_.length(), value, 10);
+    CutToken<types::Number>(result.ptr - current_view_.data(), value);
   }
   else if (std::isalpha(c) || c == '_') {
-    size_t word_length = std::find_if_not(current_line_.begin(), current_line_.end(),
+    size_t word_length = std::find_if_not(current_view_.begin(), current_view_.end(),
                               [](unsigned char c) {
                                 return std::isalnum(c) || c == '_';
-                              }) - current_line_.begin();
-    std::string_view word = current_line_.substr(0, word_length);
+                              }) - current_view_.begin();
+    std::string_view word = current_view_.substr(0, word_length);
     if (word == "double")
       CutToken<types::Double>(word_length);
     else
@@ -64,5 +70,8 @@ void Lexer::NextToken() {
 }
 
 TokenContext Lexer::GetTokenContext(size_t token_length) const {
-  return TokenContext(reversed_line_list_.front(), GetCurrentLineNumber(), GetCurrentLineOffset(), token_length);
+  return TokenContext(GetCurrentLine(),
+                      GetCurrentLineNumber(),
+                      GetCurrentLineOffset(),
+                      token_length);
 }

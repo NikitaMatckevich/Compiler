@@ -42,41 +42,23 @@ public:
   inline Token& Name() noexcept { return name_; }
 };
 
-class Declaration : public VisitableExpr<Declaration> {
-  Token name_;
-  std::unique_ptr<Expr> rhs_;
-
- public:
-  Declaration(Token&& name, std::unique_ptr<Expr>&& rhs);
-  inline const Token& Name() const noexcept { return name_; }
-  inline Token& Name() noexcept { return name_; }
-  inline const std::unique_ptr<Expr>& Rhs() const noexcept { return rhs_; }
-  inline std::unique_ptr<Expr>& Rhs() noexcept { return rhs_; }
-};
-
-class Assignment : public VisitableExpr<Assignment> {
-  std::vector<std::unique_ptr<Expr>> terms_;
-
- public:
-  Assignment(std::vector<std::unique_ptr<Expr>>&& terms);
-  inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
-    return terms_;
-  }
-  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
-    return terms_;
-  }
-}; 
-
 class UnaryExpr : public VisitableExpr<UnaryExpr> {
   std::unique_ptr<Expr> term_;
-  bool is_neg_;
+  std::optional<Token> substraction_symbol_;
 
  public:
-  UnaryExpr(std::unique_ptr<Expr>&& term, bool is_neg);
+  UnaryExpr(std::unique_ptr<Expr>&& term, std::optional<Token>&& sub_symbol);
   inline const std::unique_ptr<Expr>& Term() const noexcept { return term_; }
   inline std::unique_ptr<Expr>& Term() noexcept { return term_; }
-  inline bool IsNeg() const noexcept { return is_neg_; }
-  inline bool& IsNeg() noexcept { return is_neg_; }
+  inline bool IsNeg() const noexcept {
+    return substraction_symbol_.has_value();
+  }
+  inline const std::optional<Token>& SubstractionToken() const noexcept {
+    return substraction_symbol_;
+  }
+  inline std::optional<Token>& SubstractionToken() noexcept {
+    return substraction_symbol_;
+  }
 };
 
 class BinaryExpr : public VisitableExpr<BinaryExpr> {
@@ -96,6 +78,31 @@ class BinaryExpr : public VisitableExpr<BinaryExpr> {
   }
 };
 
+class Assignment : public VisitableExpr<Assignment> {
+  std::vector<std::unique_ptr<Expr>> terms_;
+
+ public:
+  Assignment(std::vector<std::unique_ptr<Expr>>&& terms);
+  inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
+    return terms_;
+  }
+  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
+    return terms_;
+  }
+}; 
+
+class Declaration : public VisitableExpr<Declaration> {
+  Token name_;
+  std::optional<std::unique_ptr<Expr>> rhs_;
+
+ public:
+  Declaration(Token&& name, std::optional<std::unique_ptr<Expr>>&& rhs);
+  inline const Token& Name() const noexcept { return name_; }
+  inline Token& Name() noexcept { return name_; }
+  inline const std::unique_ptr<Expr>& Rhs() const noexcept { return *rhs_; }
+  inline std::unique_ptr<Expr>& Rhs() noexcept { return *rhs_; }
+};
+
 class Program : public VisitableExpr<Program> {
   std::vector<std::unique_ptr<Expr>> instructions_;
 
@@ -111,11 +118,11 @@ class Program : public VisitableExpr<Program> {
 
 class Parser {
   Lexer& lex_;
-  std::unique_ptr<UnaryExpr> ReadUnaryOp();
+  std::unique_ptr<UnaryExpr>   ReadUnaryOp();
+  std::unique_ptr<BinaryExpr>  ReadMulDiv();
+  std::unique_ptr<BinaryExpr>  ReadAddSub();
+  std::unique_ptr<Assignment>  ReadAssignment();
   std::unique_ptr<Declaration> ReadDeclaration();
-  std::unique_ptr<Expr> ReadAssignment();
-  std::unique_ptr<BinaryExpr> ReadMulDiv();
-  std::unique_ptr<BinaryExpr> ReadAddSub();
 
  public:
   explicit Parser(Lexer& lex);

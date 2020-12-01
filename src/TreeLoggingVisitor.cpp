@@ -10,6 +10,22 @@ void TreeLoggingVisitor::Visit(const Variable* expr) {
   LogNode("Name", expr->Name().GetContext().GetTokenString(), true);
 }
 
+void TreeLoggingVisitor::Visit(const UnaryExpr* expr) {
+  LogName("UnaryExpr");
+  LogNode("IsNeg", expr->IsNeg(), false);
+  LogNode("Term", expr->Term(), true);
+}
+
+void TreeLoggingVisitor::Visit(const BinaryExpr* expr) {
+  LogName("BinaryExpr");
+  for (size_t i = 0; i < expr->Ops().size(); ++i) {
+    LogNode("Term", expr->Terms()[i], false);
+    LogNode("Op", expr->Ops()[i].GetContext().GetTokenString(), false);
+  }
+  if (expr->Terms().size() > 0)
+    LogNode("Term", expr->Terms().back(), true);
+}
+
 void TreeLoggingVisitor::Visit(const Declaration* expr) {
   LogName("Declaration");
   LogNode("Left side", expr->Name().GetContext().GetTokenString(), false);
@@ -25,23 +41,6 @@ void TreeLoggingVisitor::Visit(const Assignment* expr) {
     LogNode("Term", expr->Terms()[i], false);
   }
   LogNode("Term", expr->Terms().back(), true);
-}
-
-
-void TreeLoggingVisitor::Visit(const UnaryExpr* expr) {
-  LogName("UnaryExpr");
-  LogNode("IsNeg", expr->IsNeg(), false);
-  LogNode("Term", expr->Term(), true);
-}
-
-void TreeLoggingVisitor::Visit(const BinaryExpr* expr) {
-  LogName("BinaryExpr");
-  for (size_t i = 0; i < expr->Ops().size(); ++i) {
-    LogNode("Term", expr->Terms()[i], false);
-    LogNode("Op", expr->Ops()[i].GetContext().GetTokenString(), false);
-  }
-  if (expr->Terms().size() > 0)
-    LogNode("Term", expr->Terms().back(), true);
 }
 
 void TreeLoggingVisitor::Visit(const Program* expr) {

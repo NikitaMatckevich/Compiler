@@ -25,30 +25,28 @@ std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
 int main() {
   try {
 
-    std::ifstream fin("../example.txt");
+    std::string path = "../example.txt";
+    Lexer lexer{path};
     
-    if (!fin.good())
-      throw std::runtime_error("file not found");
-
-    Lexer lexer{fin};
     Parser parser{lexer};
     std::unique_ptr<Expr> ptr = parser.ReadProgram();
 
-    TreeLoggingVisitor logger;
+    LvalueCheckVisitor checker;
+    ptr->Accept(&checker);
 
     std::cout << "Before transformation:\n";
+    TreeLoggingVisitor logger;
     ptr->Accept(&logger);
 
     ShrinkMutatingVisitor shrinker;
     ptr->Accept(&shrinker);
 
+    ExecuteMutatingVisitor executor;
+    ptr->Accept(&executor);
+
     std::cout << "After transformation:\n";
     ptr->Accept(&logger);
 
-    //ExecuteVisitor exec;
-    //ptr->Accept(&exec);
-    //std::cout << "Results: " << exec.GetResults() << std::endl;
-    // std::cout << "Program returned code " << 0 << std::endl;
     return 0;
 
   } catch (const CompileError& e) {

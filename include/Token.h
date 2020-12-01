@@ -7,7 +7,7 @@
 namespace types {
 
 struct Number     {
-  int value;
+  double value;
 };
 struct Add        {};
 struct Sub        {};

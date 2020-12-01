@@ -4,72 +4,83 @@
 #include <Token.h>
 
 #include <forward_list>
-#include <fstream>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iostream>
+
+#include <boost/iostreams/device/mapped_file.hpp>
 
 class Lexer {
  private:
-  std::istream& in_;
-  std::forward_list<std::string> reversed_line_list_;
-  std::string_view current_line_;
+  boost::iostreams::mapped_file_source source_;
   size_t current_line_number_{0};
+  size_t current_line_offset_{0};
+  size_t current_line_ending_{0};
+  std::string_view current_view_;
   std::optional<Token> last_token_{std::nullopt};
 
-  bool NextLine() {
-    std::string str;
-
-    if (std::getline(in_, str)) {
-      reversed_line_list_.push_front(std::move(str));
-      ++current_line_number_;
-      current_line_ = reversed_line_list_.front();
-      return true;
-    }
-
-    return false;
+  inline std::string_view GetFile() const {
+    return std::string_view(source_.data());
   }
 
-  void SkipWhitespaces() {
+  inline std::string_view GetCurrentLine() const {
+    return std::string_view(GetFile().data() + current_line_offset_,
+                            current_line_ending_ - current_line_offset_);
+  }
+  
+  inline bool NextLine() {
+    auto file_view_= GetFile();
+    if (file_view_.begin() + current_line_ending_ < file_view_.end()) {
+      ++current_line_number_;
+      current_line_offset_ = current_line_ending_;
+      current_line_ending_ = file_view_.find_first_of('\n', current_line_offset_) + 1;
+      current_view_ = GetCurrentLine();
+      return true;
+    }
+    return false;
+  }
+  
+  inline void SkipWhitespaces() {
 
     auto space_counter = [&]() {
-      return std::find_if_not(current_line_.begin(), current_line_.end(),
+      return std::find_if_not(current_view_.begin(), current_view_.end(),
                               [](unsigned char c) {
                                 return std::isspace(c);
-                              }) - current_line_.begin();
+                              }) - current_view_.begin();
     };
 
     do
-      current_line_.remove_prefix(space_counter());
+      current_view_.remove_prefix(space_counter());
     while
-      (current_line_.empty() && NextLine());
+      (current_view_.empty() && NextLine());
 
   }
 
-  TokenContext GetTokenContext(size_t token_length) const;
+  inline TokenContext GetTokenContext(size_t token_length) const;
 
-  size_t GetCurrentLineNumber() const { return current_line_number_; }
+  inline size_t GetCurrentLineNumber() const { return current_line_number_; }
 
-  size_t GetCurrentLineOffset() const {
-    if (reversed_line_list_.empty() || !current_line_.data()) {
+  inline size_t GetCurrentLineOffset() const {
+    if (!current_view_.data()) {
       return 0;
     }
-    return current_line_.data() - reversed_line_list_.front().data();
+    return current_view_.data() - (GetFile().data() + current_line_offset_);
   }
 
   template <class T, class... Args>
   void CutToken(size_t token_length, Args&&... args) {
     last_token_.emplace(GetTokenContext(token_length), T{std::forward<Args>(args)...});
-    current_line_.remove_prefix(token_length);
+    current_view_.remove_prefix(token_length);
   }
 
   void NextToken();
 
  public:
-  explicit Lexer(std::istream& in);
-  ~Lexer() = default;
+  explicit Lexer(const std::string& path);
+  ~Lexer();
 
   inline const Token& Peek() {
     if (!last_token_) {

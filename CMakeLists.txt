@@ -14,21 +14,22 @@ set(SOURCE
     ../src/Ast.cpp
     #../src/ShrinkConstVisitor.cpp
     ../src/ShrinkMutatingVisitor.cpp
-    #../src/ExecuteVisitor.cpp
+    ../src/ExecuteMutatingVisitor.cpp
     ../src/TreeLoggingVisitor.cpp
     ../src/LvalueRecognizeVisitor.cpp
+    ../src/boost/mapped_file.cpp
 )
 
 include_directories(include)
 
 message(STATUS "Current build type: ${CMAKE_BUILD_TYPE}")
 
-if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_CXX_CLANG_TIDY clang-tidy)
-    message(STATUS "clang-tidy on")
-else()
-    unset(CMAKE_CXX_CLANG_TIDY)
-    message(STATUS "clang-tidy off")
-endif()
+#if (NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+#    set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+#    message(STATUS "clang-tidy on")
+#else()
+#    unset(CMAKE_CXX_CLANG_TIDY)
+#    message(STATUS "clang-tidy off")
+#endif()
 
 add_executable(compiler ${SOURCE})

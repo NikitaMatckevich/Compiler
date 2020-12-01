@@ -7,28 +7,27 @@ class ConstVisitor {
   virtual ~ConstVisitor() = default;
   virtual void Visit(const Constant* expr)    = 0;
   virtual void Visit(const Variable* expr)    = 0;
-  virtual void Visit(const Declaration* expr) = 0;
-  virtual void Visit(const Assignment* expr)  = 0;
   virtual void Visit(const UnaryExpr* expr)   = 0;
   virtual void Visit(const BinaryExpr* expr)  = 0;
+  virtual void Visit(const Assignment* expr)  = 0;
+  virtual void Visit(const Declaration* expr) = 0;
   virtual void Visit(const Program* expr)     = 0;
   
   #define VISITABLE\
   void Visit(const Constant* expr) override final;\
   void Visit(const Variable* expr) override final;\
-  void Visit(const Declaration* expr) override final;\
-  void Visit(const Assignment* expr) override final;\
   void Visit(const UnaryExpr* expr) override final;\
   void Visit(const BinaryExpr* expr) override final;\
+  void Visit(const Assignment* expr) override final;\
+  void Visit(const Declaration* expr) override final;\
   void Visit(const Program* expr) override final;
 };
 
-class LvalueRecognizeVisitor : public ConstVisitor {
+class LvalueCheckVisitor : public ConstVisitor {
  private:
-  bool is_lvalue_ = false;
+  bool from_assignment_ = false;
  public:
   VISITABLE
-  bool GetResults() const;
 };
 
 class ShrinkConstVisitor : public ConstVisitor {
