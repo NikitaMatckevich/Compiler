@@ -24,7 +24,7 @@ void Lexer::NextToken() {
     int value = 0xDEADBEEF;
     auto result = std::from_chars(current_view_.data(),
       current_view_.data() + current_view_.length(), value, 10);
-    CutToken<types::Number>(result.ptr - current_view_.data(), value);
+    CutToken<types::Number>(result.ptr - current_view_.data(), (double)value);
   }
   else if (std::isalpha(c) || c == '_') {
     size_t word_length = std::find_if_not(current_view_.begin(), current_view_.end(),

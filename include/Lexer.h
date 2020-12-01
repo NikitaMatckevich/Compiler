@@ -23,7 +23,7 @@ class Lexer {
   std::optional<Token> last_token_{std::nullopt};
 
   inline std::string_view GetFile() const {
-    return std::string_view(source_.data());
+    return std::string_view(source_.data(), source_.size());
   }
 
   inline std::string_view GetCurrentLine() const {
