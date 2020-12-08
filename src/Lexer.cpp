@@ -59,7 +59,7 @@ void Lexer::NextToken() {
       CutToken<types::RPar>(1);
       break;
     case ';':
-      CutToken<types::Eol>(1);
+      CutToken<types::Semicolon>(1);
       break;
     default:
       throw LexerError(GetTokenContext(1));

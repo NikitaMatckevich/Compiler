@@ -10,9 +10,9 @@ class MutatingVisitor;
 
 class Expr {
  public:
-  virtual ~Expr() = default;
+  virtual ~Expr()                                  = default;
   virtual void Accept(ConstVisitor* visitor) const = 0;
-  virtual void Accept(MutatingVisitor* visitor) = 0;
+  virtual void Accept(MutatingVisitor* visitor)    = 0;
 };
 
 template <class ConcreteExpr>
@@ -27,7 +27,7 @@ class Constant : public VisitableExpr<Constant> {
 
  public:
   Constant(Token&& number);
-  inline const Token&  Value() const noexcept { return number_; }
+  inline const Token& Value() const noexcept { return number_; }
   inline Token& Value() noexcept { // Do we really need this function, huh?
     return number_;
   }
@@ -36,7 +36,7 @@ class Constant : public VisitableExpr<Constant> {
 class Variable : public VisitableExpr<Variable> {
   Token name_;
 
-public:
+ public:
   Variable(Token&& name);
   inline const Token& Name() const noexcept { return name_; }
   inline Token& Name() noexcept { return name_; }
@@ -50,9 +50,7 @@ class UnaryExpr : public VisitableExpr<UnaryExpr> {
   UnaryExpr(std::unique_ptr<Expr>&& term, std::optional<Token>&& sub_symbol);
   inline const std::unique_ptr<Expr>& Term() const noexcept { return term_; }
   inline std::unique_ptr<Expr>& Term() noexcept { return term_; }
-  inline bool IsNeg() const noexcept {
-    return subtraction_symbol_.has_value();
-  }
+  inline bool IsNeg() const noexcept { return subtraction_symbol_.has_value(); }
   inline const std::optional<Token>& SubstractionToken() const noexcept {
     return subtraction_symbol_;
   }
@@ -73,9 +71,7 @@ class BinaryExpr : public VisitableExpr<BinaryExpr> {
   inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
     return terms_;
   }
-  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
-    return terms_;
-  }
+  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept { return terms_; }
 };
 
 class Assignment : public VisitableExpr<Assignment> {
@@ -86,10 +82,8 @@ class Assignment : public VisitableExpr<Assignment> {
   inline const std::vector<std::unique_ptr<Expr>>& Terms() const noexcept {
     return terms_;
   }
-  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept {
-    return terms_;
-  }
-}; 
+  inline std::vector<std::unique_ptr<Expr>>& Terms() noexcept { return terms_; }
+};
 
 class Declaration : public VisitableExpr<Declaration> {
   Token name_;
@@ -108,7 +102,8 @@ class Program : public VisitableExpr<Program> {
 
  public:
   Program(std::vector<std::unique_ptr<Expr>>&& instructions);
-  inline const std::vector<std::unique_ptr<Expr>>& Instructions() const noexcept {
+  inline const std::vector<std::unique_ptr<Expr>>&
+  Instructions() const noexcept {
     return instructions_;
   }
   inline std::vector<std::unique_ptr<Expr>>& Instructions() noexcept {
@@ -118,10 +113,10 @@ class Program : public VisitableExpr<Program> {
 
 class Parser {
   Lexer& lex_;
-  std::unique_ptr<UnaryExpr>   ReadUnaryOp();
-  std::unique_ptr<BinaryExpr>  ReadMulDiv();
-  std::unique_ptr<BinaryExpr>  ReadAddSub();
-  std::unique_ptr<Assignment>  ReadAssignment();
+  std::unique_ptr<UnaryExpr> ReadUnaryOp();
+  std::unique_ptr<BinaryExpr> ReadMulDiv();
+  std::unique_ptr<BinaryExpr> ReadAddSub();
+  std::unique_ptr<Assignment> ReadAssignment();
   std::unique_ptr<Declaration> ReadDeclaration();
 
  public:
@@ -132,7 +127,17 @@ class Parser {
 template <class... Types>
 constexpr const Token& Expect(const Token& t) {
   if (!(... || t.Is<Types>())) {
-    throw SyntaxError(t);
+    throw SyntaxError(
+        t, "expected ", types::Describe<Types...>(), ", got ",
+        std::quoted(t.GetContext().GetTokenString(), /* delim= */ '\''));
   }
   return t;
+}
+
+template <class... Types>
+void Rewind(Lexer& lexer) {
+  Token t = lexer.Get();
+  while (!(... || t.Is<Types>()) && !t.Is<types::Eof>()) {
+    t = lexer.Get();
+  }
 }

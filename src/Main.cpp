@@ -30,6 +30,9 @@ int main() {
     
     Parser parser{lexer};
     std::unique_ptr<Expr> ptr = parser.ReadProgram();
+    if (!ptr) {
+      return 1;
+    }
 
     LvalueCheckVisitor checker;
     ptr->Accept(&checker);

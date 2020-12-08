@@ -45,7 +45,8 @@ class LexerError : public CompileError {
 
 class SyntaxError : public CompileError {
  public:
-  SyntaxError(const Token& token)
-      : CompileError(BuildString("Syntax error:\n",
-                                 BuildFromContext(token.GetContext()))) {}
+  template <class... Args>
+  SyntaxError(const Token& token, Args&&... args)
+      : CompileError(BuildString("Syntax error: ", std::forward<Args>(args)...,
+                                 '\n', BuildFromContext(token.GetContext()))) {}
 };

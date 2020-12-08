@@ -35,9 +35,13 @@ class Lexer {
     auto file_view = GetFile();
     if (file_view.begin() + current_line_ending_ < file_view.end()) {
       ++current_line_number_;
-      current_line_offset_ = current_line_ending_;
-      current_line_ending_ =
-          file_view.find_first_of('\n', current_line_offset_) + 1;
+      current_line_offset_ = current_line_ending_ + 1;
+      std::size_t newline_pos = file_view.find_first_of('\n', current_line_offset_);
+      if (newline_pos == std::string_view::npos) {
+        current_line_ending_ = file_view.length();
+      } else {
+        current_line_ending_ = newline_pos;
+      }
       current_view_ = GetCurrentLine();
       return true;
     }

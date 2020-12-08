@@ -1,33 +1,73 @@
 #pragma once
 
+#include <array>
 #include <iostream>
+#include <sstream>
 #include <string_view>
 #include <variant>
 
 namespace types {
 
-struct Number     {
+#define TOKEN_TYPE(class_name, repr_name)                                      \
+  namespace internal {                                                         \
+  class class_name##Helper {                                                   \
+   public:                                                                     \
+    static constexpr char kReprName[]{repr_name};                              \
+    virtual const char* GetReprName() const { return kReprName; }              \
+  };                                                                           \
+  } /* namespace internal */                                                   \
+  class class_name : public internal::class_name##Helper
+
+TOKEN_TYPE(Number, "NumericLiteral") {
+ public:
   double value;
+  Number(double val = double())
+      : value(val) {}
 };
-struct Add        {};
-struct Sub        {};
-struct Mul        {};
-struct Div        {};
-struct LPar       {};
-struct RPar       {};
-struct Eol        {};
-struct Eof        {};
-struct Identifier {};
-struct Double     {};
-struct Assignment {};
+TOKEN_TYPE(Add, "'+'"){};
+TOKEN_TYPE(Sub, "'-'"){};
+TOKEN_TYPE(Mul, "'*'"){};
+TOKEN_TYPE(Div, "'/'"){};
+TOKEN_TYPE(LPar, "'('"){};
+TOKEN_TYPE(RPar, "')'"){};
+TOKEN_TYPE(Semicolon, "';'"){};
+TOKEN_TYPE(Eof, "<EOF>"){};
+TOKEN_TYPE(Identifier, "Identifier"){};
+TOKEN_TYPE(Double, "KeywordDouble"){};
+TOKEN_TYPE(Assignment, "'='"){};
+
+#undef TOKEN_TYPE
+
+template <class... Types>
+std::string Describe() {
+  if constexpr (sizeof...(Types) == 0) {
+    return "";
+  } else {
+    std::array type_names{Types::kReprName...};
+    if constexpr (sizeof...(Types) == 1) {
+      return type_names[0];
+    } else {
+      std::stringstream ss;
+
+      ss << type_names.front();
+
+      for (size_t i = 1; i < type_names.size() - 1; ++i) {
+        ss << ", " << type_names[i];
+      }
+
+      ss << " or " << type_names.back();
+      return ss.str();
+    }
+  }
+}
 
 } // namespace types
 
 class TokenContext {
  public:
-  TokenContext() = default;
+  TokenContext()                    = default;
   TokenContext(const TokenContext&) = default;
-  TokenContext(TokenContext&&) = default;
+  TokenContext(TokenContext&&)      = default;
   TokenContext& operator=(const TokenContext&) = default;
   TokenContext& operator=(TokenContext&&) = default;
 
@@ -59,9 +99,9 @@ class TokenContext {
 
 class Token {
  public:
-  Token() noexcept = default;
+  Token() noexcept    = default;
   Token(const Token&) = default;
-  Token(Token&&) = default;
+  Token(Token&&)      = default;
   Token& operator=(const Token&) = default;
   Token& operator=(Token&&) = default;
 
@@ -82,16 +122,17 @@ class Token {
   constexpr bool Is() const noexcept {
     return std::holds_alternative<T>(token_data_);
   }
-  constexpr inline std::size_t Id() const noexcept { return token_data_.index(); }
+  constexpr inline std::size_t Id() const noexcept {
+    return token_data_.index();
+  }
 
   const TokenContext& GetContext() const { return context_; }
 
  private:
-
   std::variant<types::Number, types::Add, types::Sub, types::Mul, types::Div,
-               types::LPar, types::RPar, types::Eol, types::Eof,
+               types::LPar, types::RPar, types::Semicolon, types::Eof,
                types::Identifier, types::Double, types::Assignment>
-  token_data_;
+      token_data_;
 
   TokenContext context_;
 };
