@@ -3,13 +3,13 @@
 #include <Errors.h>
 #include <Token.h>
 
+#include <algorithm>
 #include <forward_list>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <iostream>
 
 #include <boost/iostreams/device/mapped_file.hpp>
 
@@ -30,33 +30,31 @@ class Lexer {
     return std::string_view(GetFile().data() + current_line_offset_,
                             current_line_ending_ - current_line_offset_);
   }
-  
+
   inline bool NextLine() {
-    auto file_view_= GetFile();
-    if (file_view_.begin() + current_line_ending_ < file_view_.end()) {
+    auto file_view = GetFile();
+    if (file_view.begin() + current_line_ending_ < file_view.end()) {
       ++current_line_number_;
       current_line_offset_ = current_line_ending_;
-      current_line_ending_ = file_view_.find_first_of('\n', current_line_offset_) + 1;
+      current_line_ending_ =
+          file_view.find_first_of('\n', current_line_offset_) + 1;
       current_view_ = GetCurrentLine();
       return true;
     }
     return false;
   }
-  
+
   inline void SkipWhitespaces() {
 
     auto space_counter = [&]() {
       return std::find_if_not(current_view_.begin(), current_view_.end(),
-                              [](unsigned char c) {
-                                return std::isspace(c);
-                              }) - current_view_.begin();
+                              [](unsigned char c) { return std::isspace(c); }) -
+             current_view_.begin();
     };
 
-    do
+    do {
       current_view_.remove_prefix(space_counter());
-    while
-      (current_view_.empty() && NextLine());
-
+    } while (current_view_.empty() && NextLine());
   }
 
   inline TokenContext GetTokenContext(size_t token_length) const;
@@ -72,7 +70,8 @@ class Lexer {
 
   template <class T, class... Args>
   void CutToken(size_t token_length, Args&&... args) {
-    last_token_.emplace(GetTokenContext(token_length), T{std::forward<Args>(args)...});
+    last_token_.emplace(GetTokenContext(token_length),
+                        T{std::forward<Args>(args)...});
     current_view_.remove_prefix(token_length);
   }
 

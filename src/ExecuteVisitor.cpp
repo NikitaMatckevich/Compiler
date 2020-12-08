@@ -1,7 +1,7 @@
 #include <ConstVisitors.h>
 
 void ExecuteVisitor::Visit(const Constant* expr) {
-  stack_.push_back(expr->Value());
+  stack_.push_back(expr->Value().As<types::Number>().value);
 }
 
 void ExecuteVisitor::Visit(const UnaryExpr* expr) {
@@ -26,15 +26,15 @@ void ExecuteVisitor::Visit(const Program* expr) {
   }
 }
 
-const std::vector<int>& ExecuteVisitor::GetResults() const { return stack_; }
+const std::vector<double>& ExecuteVisitor::GetResults() const { return stack_; }
 void ExecuteVisitor::DispatchBinOp(const Token& token) {
-  int rhs = stack_.back();
+  double rhs = stack_.back();
   stack_.pop_back();
 
-  int lhs = stack_.back();
+  double lhs = stack_.back();
   stack_.pop_back();
 
-  int result = 0xDEADBEEF;
+  double result = 0xDEADBEEF;
 
   if (token.Is<types::Add>()) {
     result = lhs + rhs;

@@ -41,11 +41,11 @@ class ShrinkConstVisitor : public ConstVisitor {
 
 class ExecuteVisitor : public ConstVisitor {
  private:
-  std::vector<int> stack_;
+  std::vector<double> stack_;
   void DispatchBinOp(const Token& token);
  public:
   VISITABLE
-  const std::vector<int>& GetResults() const;
+  const std::vector<double>& GetResults() const;
 };
 
 class TreeLoggingVisitor : public ConstVisitor { 

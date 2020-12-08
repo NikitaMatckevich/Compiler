@@ -20,7 +20,7 @@ class CompileError : public std::runtime_error {
   static std::string BuildFromContext(const TokenContext& ctx) {
     std::ostringstream ss;
     ss << std::setw(6) << ctx.GetLineNumber() << ": ";
-    size_t offset = ss.tellp();
+    size_t offset = static_cast<size_t>(ss.tellp());
     offset += ctx.GetBeginPos();
 
     ss << ctx.GetLine() << '\n';

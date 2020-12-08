@@ -10,9 +10,10 @@ Constant::Constant(Token&& number)
 Variable::Variable(Token&& name)
     : name_{std::move(name)} {}
 
-UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term, std::optional<Token>&& sub_symbol)
+UnaryExpr::UnaryExpr(std::unique_ptr<Expr>&& term,
+                     std::optional<Token>&& sub_symbol)
     : term_{std::move(term)}
-    , substraction_symbol_{std::move(sub_symbol)} {}
+    , subtraction_symbol_{std::move(sub_symbol)} {}
 
 BinaryExpr::BinaryExpr(std::vector<Token>&& ops,
                        std::vector<std::unique_ptr<Expr>>&& terms)
@@ -22,7 +23,8 @@ BinaryExpr::BinaryExpr(std::vector<Token>&& ops,
 Assignment::Assignment(std::vector<std::unique_ptr<Expr>>&& terms)
     : terms_{std::move(terms)} {}
 
-Declaration::Declaration(Token&& name, std::optional<std::unique_ptr<Expr>>&& rhs)
+Declaration::Declaration(Token&& name,
+                         std::optional<std::unique_ptr<Expr>>&& rhs)
     : name_{std::move(name)}
     , rhs_{std::move(rhs)} {}
 
@@ -33,9 +35,9 @@ Parser::Parser(Lexer& lex)
     : lex_(lex) {}
 
 std::unique_ptr<UnaryExpr> Parser::ReadUnaryOp() {
-  
-  std::optional<Token> substraction_symbol{std::nullopt};
-  
+
+  std::optional<Token> subtraction_symbol{std::nullopt};
+
   Token first = lex_.Peek();
   Token last;
 
@@ -43,22 +45,25 @@ std::unique_ptr<UnaryExpr> Parser::ReadUnaryOp() {
   while ((last = lex_.Get()).Is<types::Sub>()) {
     is_neg = !is_neg;
   }
-  if (is_neg) substraction_symbol.emplace(first);
+  if (is_neg) {
+    subtraction_symbol.emplace(first);
+  }
 
   if (last.Is<types::LPar>()) {
-    auto p = std::make_unique<UnaryExpr>(ReadAddSub(), std::move(substraction_symbol));
+    auto p = std::make_unique<UnaryExpr>(ReadAddSub(),
+                                         std::move(subtraction_symbol));
     Expect<types::RPar>(lex_.Get());
     return p;
   } else {
     if (last.Is<types::Number>()) {
-      return
-        std::make_unique<UnaryExpr>(std::make_unique<Constant>(std::move(last)),
-          std::move(substraction_symbol));
+      return std::make_unique<UnaryExpr>(
+          std::make_unique<Constant>(std::move(last)),
+          std::move(subtraction_symbol));
     } else {
       Expect<types::Identifier>(last);
-      return
-        std::make_unique<UnaryExpr>(std::make_unique<Variable>(std::move(last)),
-          std::move(substraction_symbol));
+      return std::make_unique<UnaryExpr>(
+          std::make_unique<Variable>(std::move(last)),
+          std::move(subtraction_symbol));
     }
   }
 }
@@ -115,10 +120,11 @@ std::unique_ptr<Program> Parser::ReadProgram() {
   std::vector<std::unique_ptr<Expr>> instructions;
   Token t;
   while (!(t = lex_.Peek()).Is<types::Eof>()) {
-    if (t.Is<types::Double>())
+    if (t.Is<types::Double>()) {
       instructions.emplace_back(ReadDeclaration());
-    else
+    } else {
       instructions.emplace_back(ReadAssignment());
+    }
     lex_.Get();
   }
   return std::make_unique<Program>(std::move(instructions));

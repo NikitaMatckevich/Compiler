@@ -22,17 +22,19 @@ void TreeLoggingVisitor::Visit(const BinaryExpr* expr) {
     LogNode("Term", expr->Terms()[i], false);
     LogNode("Op", expr->Ops()[i].GetContext().GetTokenString(), false);
   }
-  if (expr->Terms().size() > 0)
+  if (!expr->Terms().empty()) {
     LogNode("Term", expr->Terms().back(), true);
+  }
 }
 
 void TreeLoggingVisitor::Visit(const Declaration* expr) {
   LogName("Declaration");
   LogNode("Left side", expr->Name().GetContext().GetTokenString(), false);
-  if (expr->Rhs())
+  if (expr->Rhs()) {
     LogNode("Right side", expr->Rhs(), false);
-  else
+  } else {
     LogNode("Right side", "", true);
+  }
 }
 
 void TreeLoggingVisitor::Visit(const Assignment* expr) {
@@ -48,8 +50,9 @@ void TreeLoggingVisitor::Visit(const Program* expr) {
   for (size_t i = 0; i < expr->Instructions().size() - 1; ++i) {
     LogNode("Instruction", expr->Instructions()[i], false);
   }
-  if (expr->Instructions().size() > 0)
+  if (!expr->Instructions().empty()) {
     LogNode("Instruction", expr->Instructions().back(), true);
+  }
 }
 
 void TreeLoggingVisitor::Preamble() const {

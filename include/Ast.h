@@ -44,20 +44,20 @@ public:
 
 class UnaryExpr : public VisitableExpr<UnaryExpr> {
   std::unique_ptr<Expr> term_;
-  std::optional<Token> substraction_symbol_;
+  std::optional<Token> subtraction_symbol_;
 
  public:
   UnaryExpr(std::unique_ptr<Expr>&& term, std::optional<Token>&& sub_symbol);
   inline const std::unique_ptr<Expr>& Term() const noexcept { return term_; }
   inline std::unique_ptr<Expr>& Term() noexcept { return term_; }
   inline bool IsNeg() const noexcept {
-    return substraction_symbol_.has_value();
+    return subtraction_symbol_.has_value();
   }
   inline const std::optional<Token>& SubstractionToken() const noexcept {
-    return substraction_symbol_;
+    return subtraction_symbol_;
   }
   inline std::optional<Token>& SubstractionToken() noexcept {
-    return substraction_symbol_;
+    return subtraction_symbol_;
   }
 };
 

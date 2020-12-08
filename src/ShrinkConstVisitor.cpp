@@ -49,3 +49,6 @@ void ShrinkConstVisitor::Visit(const Program* expr) {
 const std::unique_ptr<Expr>& ShrinkConstVisitor::GetResults() const& {
   return shrinked_copy_;
 }
+std::unique_ptr<Expr>&& ShrinkConstVisitor::GetResults() && {
+  return std::move(shrinked_copy_);
+}

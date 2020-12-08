@@ -6,24 +6,24 @@ void ShrinkMutatingVisitor::Visit(Variable* /* expr */) {}
 
 void ShrinkMutatingVisitor::Visit(UnaryExpr* expr) {
   ApplyMutatorTo(expr->Term());
-  if (!expr->IsNeg())
-    GetMutator() = std::move(expr->Term());
+  if (!expr->IsNeg()) {
+    GetMutator() = std::move(expr->Term()); }
 }
 
 void ShrinkMutatingVisitor::Visit(BinaryExpr* expr) {
   for (auto& term : expr->Terms()) {
     ApplyMutatorTo(term);
   }
-  if (expr->Terms().size() == 1)
-    GetMutator() = std::move(expr->Terms().front());
+  if (expr->Terms().size() == 1) {
+    GetMutator() = std::move(expr->Terms().front()); }
 }
 
 void ShrinkMutatingVisitor::Visit(Assignment* expr) {
   for (auto& term : expr->Terms()) {
     ApplyMutatorTo(term);
   }
-  if (expr->Terms().size() == 1)
-    GetMutator() = std::move(expr->Terms().front());
+  if (expr->Terms().size() == 1) {
+    GetMutator() = std::move(expr->Terms().front()); }
 }
 
 void ShrinkMutatingVisitor::Visit(Declaration* expr) {

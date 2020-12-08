@@ -3,13 +3,9 @@
 #include <charconv>
 #include <stdexcept>
 
-Lexer::Lexer(const std::string& path) {
-  source_.open(path);
-}
+Lexer::Lexer(const std::string& path) { source_.open(path); }
 
-Lexer::~Lexer() {
-  source_.close();
-}
+Lexer::~Lexer() { source_.close(); }
 
 void Lexer::NextToken() {
   SkipWhitespaces();
@@ -19,25 +15,27 @@ void Lexer::NextToken() {
     return;
   }
 
-  unsigned char c = current_view_.front();
+  char c = current_view_.front();
   if (std::isdigit(c)) {
-    int value = 0xDEADBEEF;
+    int value   = 0xDEADBEEF;
     auto result = std::from_chars(current_view_.data(),
-      current_view_.data() + current_view_.length(), value, 10);
-    CutToken<types::Number>(result.ptr - current_view_.data(), (double)value);
-  }
-  else if (std::isalpha(c) || c == '_') {
-    size_t word_length = std::find_if_not(current_view_.begin(), current_view_.end(),
-                              [](unsigned char c) {
-                                return std::isalnum(c) || c == '_';
-                              }) - current_view_.begin();
+                                  current_view_.data() + current_view_.length(),
+                                  value, 10);
+    CutToken<types::Number>(result.ptr - current_view_.data(),
+                            static_cast<double>(value));
+  } else if (std::isalpha(c) || c == '_') {
+    size_t word_length =
+        std::find_if_not(
+            current_view_.begin(), current_view_.end(),
+            [](unsigned char c) { return std::isalnum(c) || c == '_'; }) -
+        current_view_.begin();
     std::string_view word = current_view_.substr(0, word_length);
-    if (word == "double")
+    if (word == "double") {
       CutToken<types::Double>(word_length);
-    else
+    } else {
       CutToken<types::Identifier>(word_length);
-  }
-  else {
+    }
+  } else {
     switch (c) {
     case '=':
       CutToken<types::Assignment>(1);
@@ -70,8 +68,6 @@ void Lexer::NextToken() {
 }
 
 TokenContext Lexer::GetTokenContext(size_t token_length) const {
-  return TokenContext(GetCurrentLine(),
-                      GetCurrentLineNumber(),
-                      GetCurrentLineOffset(),
-                      token_length);
+  return TokenContext(GetCurrentLine(), GetCurrentLineNumber(),
+                      GetCurrentLineOffset(), token_length);
 }
